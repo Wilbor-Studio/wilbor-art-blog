@@ -1,6 +1,7 @@
 "use client";
 import IconMenu from '@/app/IconMenu';
 import { IconX } from '@/components/IconX';
+import ShareTagButton from '@/components/ShareTagButton';
 import { clsx } from 'clsx/lite';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -204,6 +205,10 @@ export default function DrawerTagsDesktop({ tags, selectedTag, setSelectedTag, m
                     <div className="flex-1 h-px bg-gray-200 dark:bg-neutral-700" />
                     <div className="flex-1 h-px bg-gray-200 dark:bg-neutral-700" />
                   </div>
+                )}
+                {/* Compartilhar portfólio da tag selecionada com um cliente */}
+                {selectedTag && (
+                  <ShareTagButton tag={selectedTag} />
                 )}
                 {/* Tags */}
                 {Array.isArray(tags) && tags.length > 0 && (

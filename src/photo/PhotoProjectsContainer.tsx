@@ -1,8 +1,8 @@
 'use client';
 
 import { IconX } from '@/components/IconX';
-import ImageCarousel from '@/components/ImageCarousel';
 import Markdown from '@/components/Markdown';
+import ShareTagButton from '@/components/ShareTagButton';
 import { MarkdownRenderer } from '@/lib/markdown/MarkdownRenderer';
 import '@/styles/slider-custom.css';
 import { clsx } from 'clsx/lite';
@@ -157,7 +157,6 @@ const MediaItem = ({
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [linkCopied, setLinkCopied] = useState(false);
-    const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const images = getPostImages(mainItem);
 
     const handleCopyLink = useCallback(async (e: React.MouseEvent) => {
@@ -230,23 +229,10 @@ const MediaItem = ({
         const onKey = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 setIsFullscreen(false);
-            } else if (isFullscreen && images.length > 1) {
-                // Navegação por teclado apenas em desktop (largura >= 640px) e quando há mais de uma imagem
-                if (window.innerWidth >= 640) {
-                    if (e.key === 'ArrowLeft') {
-                        e.preventDefault();
-                        setCurrentImageIndex(prev => prev === 0 ? images.length - 1 : prev - 1);
-                    } else if (e.key === 'ArrowRight') {
-                        e.preventDefault();
-                        setCurrentImageIndex(prev => prev === images.length - 1 ? 0 : prev + 1);
-                    }
-                }
             }
         };
 
         if (!isFullscreen) {
-            // Reset do índice quando sair do fullscreen
-            setCurrentImageIndex(0);
             return;
         }
 
@@ -705,12 +691,11 @@ const MediaItem = ({
                                         )}
                                     </button>
                                 )} */}
-                                {/* Botão de zoom para abrir fullscreen reutilizando ImageCarousel */}
+                                {/* Botão de zoom para abrir o post inteiro em destaque central (tela cheia) */}
                                 {images.length > 0 && (
                                     <button
                                         onClick={e => {
                                             e.stopPropagation();
-                                            setCurrentImageIndex(0); // Reset do índice ao abrir fullscreen
                                             setIsFullscreen(true);
                                         }}
                                         className="p-1.5 sm:p-2 bg-transparent border-none shadow-none flex items-center justify-center hover:bg-transparent rounded-full transition-colors"
@@ -757,10 +742,10 @@ const MediaItem = ({
                 )}
 
             </div>
-            {/* Modal fullscreen renderizado via Portal fora do card */}
+            {/* Modal fullscreen renderizado via Portal fora do card: foca no post inteiro com destaque central */}
             {mounted && isFullscreen && typeof window !== 'undefined' && createPortal(
                 <div
-                    className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-center"
+                    className="fixed top-0 left-0 right-0 z-[9999] flex justify-center overflow-y-auto overscroll-contain"
                     onClick={() => setIsFullscreen(false)}
                     style={{
                         position: 'fixed',
@@ -770,7 +755,9 @@ const MediaItem = ({
                         width: '100vw',
                         height: 'var(--fullscreen-vh, 100svh)',
                         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-                        backgroundColor: '#000',
+                        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                        backdropFilter: 'blur(4px)',
+                        WebkitBackdropFilter: 'blur(4px)',
                     }}
                 >
                     {/* Botão de fechar no topo direito */}
@@ -786,21 +773,24 @@ const MediaItem = ({
                         <IconX size={35} />
                     </button>
 
+                    {/* Card do post centralizado e destacado */}
                     <div
-                        className="w-full h-[100dvh] max-w-none px-0 py-0 flex items-center justify-center lg:max-w-7xl lg:px-8 lg:py-20"
+                        className="relative z-[1] my-6 sm:my-12 w-full max-w-3xl lg:max-w-4xl bg-white dark:bg-black rounded-lg shadow-2xl overflow-hidden self-start"
                         onClick={e => e.stopPropagation()}
-                        style={{
-                            position: 'relative',
-                            zIndex: 1,
-                            height: 'var(--fullscreen-vh, 100svh)',
-                        }}
                     >
-                        <ImageCarousel
-                            images={images.map(src => ({ src, alt: mainItem.title || '' }))}
-                            fullscreen={true}
-                            currentIndex={currentImageIndex}
-                            onIndexChange={setCurrentImageIndex}
-                        />
+                        <div className="flex items-center px-4 sm:px-6 py-3 sm:py-4">
+                            <h2
+                                className="flex-1 text-base sm:text-xl md:text-2xl font-bold tracking-wide leading-tight !text-gray-500 dark:!text-[#888888]"
+                                style={{ fontFamily: 'IBMPlexMono, monospace' }}
+                            >
+                                {mainItem.title}
+                            </h2>
+                        </div>
+                        <div className="w-full text-left" style={{ margin: 0, padding: 0 }}>
+                            <Markdown videoPoster={updatedThumbnail || thumbnailUrl || undefined} inExpandedCard={true} hasLittleContent={!hasLargeContent}>
+                                {mainItem.hiveMetadata?.body ?? ''}
+                            </Markdown>
+                        </div>
                     </div>
                 </div>,
                 document.body
@@ -953,6 +943,31 @@ export default function PhotoGridContainer({
                 'bg-white dark:bg-neutral-950'
             )}>
                 {header}
+
+                {/* Barra de filtro ativo por tag */}
+                {selectedTag && (
+                    <div className="flex items-center gap-3 flex-wrap mb-6">
+                        <span className="font-mono text-xs uppercase tracking-wide text-gray-500 dark:text-zinc-500">
+                            Filtrando por
+                        </span>
+                        <button
+                            onClick={() => handleTagClick(selectedTag)}
+                            className="inline-flex items-center gap-2 min-h-[40px] px-4 rounded-full font-mono text-sm bg-neutral-900 text-white dark:bg-white dark:text-black border border-neutral-900 dark:border-white hover:opacity-90 active:scale-[0.98] transition-all duration-150 touch-manipulation"
+                            aria-label={`Remover filtro ${selectedTag}`}
+                            title={`Remover filtro ${selectedTag}`}
+                        >
+                            #{selectedTag}
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                        <span className="font-mono text-xs text-gray-500 dark:text-zinc-500">
+                            {mediaGroups.length === 1 ? '1 projeto' : `${mediaGroups.length} projetos`}
+                        </span>
+                        {/* Compartilhar/copiar link do portfólio filtrado com um cliente */}
+                        <ShareTagButton tag={selectedTag} compact className="sm:ml-auto" />
+                    </div>
+                )}
 
                 <div className={clsx(
                     'grid',
