@@ -1,6 +1,7 @@
 'use client';
 
 import { IconX } from '@/components/IconX';
+import ImageCarousel from '@/components/ImageCarousel';
 import Markdown from '@/components/Markdown';
 import ShareTagButton from '@/components/ShareTagButton';
 import { MarkdownRenderer } from '@/lib/markdown/MarkdownRenderer';
@@ -387,6 +388,11 @@ const MediaItem = ({
         }
     }, [isExpanded, mainItem.hiveMetadata?.body, mainItem.src]);
 
+    // Imagens do carrossel em tela cheia: começa pela thumb exibida no card e segue com as demais (sem duplicar).
+    const fullscreenImages = Array.from(
+        new Set([updatedThumbnail || thumbnailUrl, ...images].filter(Boolean) as string[])
+    ).map((src) => ({ src, alt: mainItem.title || '' }));
+
     const renderMedia = (media: Media, isMainVideo: boolean = false) => {
         if (media.src?.includes(SKATEHIVE_URL)) {
             return (
@@ -742,11 +748,10 @@ const MediaItem = ({
                 )}
 
             </div>
-            {/* Modal fullscreen renderizado via Portal fora do card: foca no post inteiro com destaque central */}
+            {/* Modal fullscreen renderizado via Portal fora do card: abre a thumb do card em tela cheia + carrossel das demais imagens */}
             {mounted && isFullscreen && typeof window !== 'undefined' && createPortal(
                 <div
-                    className="fixed top-0 left-0 right-0 z-[9999] flex justify-center overflow-y-auto overscroll-contain"
-                    onClick={() => setIsFullscreen(false)}
+                    className="fixed top-0 left-0 right-0 z-[9999]"
                     style={{
                         position: 'fixed',
                         top: 0,
@@ -755,9 +760,7 @@ const MediaItem = ({
                         width: '100vw',
                         height: 'var(--fullscreen-vh, 100svh)',
                         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-                        backgroundColor: 'rgba(0, 0, 0, 0.85)',
-                        backdropFilter: 'blur(4px)',
-                        WebkitBackdropFilter: 'blur(4px)',
+                        backgroundColor: '#000',
                     }}
                 >
                     {/* Botão de fechar no topo direito */}
@@ -773,25 +776,11 @@ const MediaItem = ({
                         <IconX size={35} />
                     </button>
 
-                    {/* Card do post centralizado e destacado */}
-                    <div
-                        className="relative z-[1] my-6 sm:my-12 w-full max-w-3xl lg:max-w-4xl bg-white dark:bg-black rounded-lg shadow-2xl overflow-hidden self-start"
-                        onClick={e => e.stopPropagation()}
-                    >
-                        <div className="flex items-center px-4 sm:px-6 py-3 sm:py-4">
-                            <h2
-                                className="flex-1 text-base sm:text-xl md:text-2xl font-bold tracking-wide leading-tight !text-gray-500 dark:!text-[#888888]"
-                                style={{ fontFamily: 'IBMPlexMono, monospace' }}
-                            >
-                                {mainItem.title}
-                            </h2>
-                        </div>
-                        <div className="w-full text-left" style={{ margin: 0, padding: 0 }}>
-                            <Markdown videoPoster={updatedThumbnail || thumbnailUrl || undefined} inExpandedCard={true} hasLittleContent={!hasLargeContent}>
-                                {mainItem.hiveMetadata?.body ?? ''}
-                            </Markdown>
-                        </div>
-                    </div>
+                    {/* Carrossel em tela cheia: inicia pela thumb do card e navega pelas demais imagens */}
+                    <ImageCarousel
+                        images={fullscreenImages}
+                        fullscreen
+                    />
                 </div>,
                 document.body
             )}
