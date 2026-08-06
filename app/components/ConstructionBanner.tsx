@@ -23,6 +23,11 @@ export default function ConstructionBanner() {
           target="_blank"
           rel="noopener noreferrer"
           className={[
+            // No mobile o link vira bloco: cai numa linha própria e o
+            // text-center do pai o centraliza. A partir de sm volta a fluir
+            // na mesma linha da frase.
+            'block sm:inline',
+            'mt-1 sm:mt-0',
             'underline underline-offset-2',
             'text-neutral-900 dark:text-neutral-100',
             'hover:opacity-70',
@@ -30,7 +35,6 @@ export default function ConstructionBanner() {
         >
           portfólio completo
         </a>
-        .
       </p>
     </div>
   );
