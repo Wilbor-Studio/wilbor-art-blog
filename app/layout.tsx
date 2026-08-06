@@ -16,6 +16,7 @@ import { Metadata } from 'next/types';
 import '../tailwind.css';
 import '../styles/markdown-contact.css';
 import '../src/styles/exhibitions.css';
+import ConstructionBanner from './components/ConstructionBanner';
 import JsonLd from './components/JsonLd';
 
 export const metadata: Metadata = {
@@ -90,6 +91,7 @@ export default function RootLayout({
       </head>
       <body className="bg-main">
           <ThemeProvider attribute="class" defaultTheme={DEFAULT_THEME}>
+              <ConstructionBanner />
               <main >
                 <div className="flex flex-col items-center">
                 </div>
