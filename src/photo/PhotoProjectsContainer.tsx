@@ -1,5 +1,6 @@
 'use client';
 
+import EditPostButton from '@/admin/EditPostButton';
 import { IconX } from '@/components/IconX';
 import ImageCarousel from '@/components/ImageCarousel';
 import Markdown from '@/components/Markdown';
@@ -496,7 +497,7 @@ const MediaItem = ({
     return (
         <div
             className={clsx(
-                'rounded-lg overflow-hidden h-full group transition-colors duration-100',
+                'relative rounded-lg overflow-hidden h-full group transition-colors duration-100',
                 'bg-white text-black dark:bg-black dark:text-white',
                 !isExpanded && 'md:border-t-8 md:border-l-8 md:border-r-8 md:border-b-0 md:border-white md:dark:border-black md:hover:bg-black md:hover:text-white md:hover:border-t-black md:hover:border-l-black md:hover:border-r-black md:dark:hover:bg-white md:dark:hover:text-black md:dark:hover:border-t-white md:dark:hover:border-l-white md:dark:hover:border-r-white',
                 isExpanded && 'p-0 sm:p-2'
@@ -505,6 +506,21 @@ const MediaItem = ({
                 if (!isExpanded) onExpand();
             }}
         >
+            {/* Editar o projeto direto do card — só aparece para o artista logado */}
+            {mainItem.hiveMetadata && (
+                <div className="absolute top-2 right-2 z-30">
+                    <EditPostButton
+                        post={{
+                            title: mainItem.title,
+                            body: mainItem.hiveMetadata.body,
+                            author: mainItem.hiveMetadata.author,
+                            permlink: mainItem.hiveMetadata.permlink,
+                            json_metadata: mainItem.hiveMetadata.json_metadata,
+                        }}
+                        fallbackTitle={mainItem.title}
+                    />
+                </div>
+            )}
             <div className={clsx(
                 'w-full',
                 isExpanded && 'transition-all duration-300',

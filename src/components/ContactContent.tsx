@@ -1,5 +1,6 @@
 'use client';
 import { getPostsByBlog, getUserAccount } from '@/../lib/hive/hive-client';
+import EditPostButton, { SECTION_EDIT_CLASS } from '@/admin/EditPostButton';
 import Markdown from '@/components/Markdown';
 import { useEffect, useState } from 'react';
 
@@ -81,6 +82,14 @@ export default function ContactContent() {
             <Markdown className="markdown-contact text-center" columns>
               {formatContactBody(post.body)}
             </Markdown>
+            <div className="mt-2 flex justify-center">
+              <EditPostButton
+                post={post}
+                label="editar contato"
+                stopPropagation={false}
+                className={SECTION_EDIT_CLASS}
+              />
+            </div>
           </article>
         )}
         {loading && <div className="text-center">Carregando...</div>}

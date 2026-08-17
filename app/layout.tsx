@@ -4,6 +4,8 @@ import {
   SITE_DESCRIPTION,
   SITE_TITLE
 } from '@/app/config';
+import AdminBar from '@/admin/AdminBar';
+import HiveAuthProvider from '@/admin/HiveAuthProvider';
 import Footer from '@/app/Footer';
 import ContactContent from '@/components/ContactContent';
 import ToasterWithThemes from '@/toast/ToasterWithThemes';
@@ -91,6 +93,7 @@ export default function RootLayout({
       </head>
       <body className="bg-main">
           <ThemeProvider attribute="class" defaultTheme={DEFAULT_THEME}>
+            <HiveAuthProvider>
               <ConstructionBanner />
               <main >
                 <div className="flex flex-col items-center">
@@ -105,6 +108,8 @@ export default function RootLayout({
                 <Footer />
               </main>
               {/* <CommandK /> */}
+              <AdminBar />
+            </HiveAuthProvider>
             <Analytics debug={false} />
             <SpeedInsights debug={false} />
             <ToasterWithThemes />

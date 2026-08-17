@@ -1,5 +1,7 @@
 'use client';
 
+import AdminLoginLink from '@/admin/AdminLoginLink';
+import EditPostButton from '@/admin/EditPostButton';
 import ImageCarousel from '@/components/ImageCarousel';
 import Markdown from '@/components/Markdown';
 import { getPostsByBlog, getUserAccount } from '@/../lib/hive/hive-client';
@@ -142,11 +144,21 @@ export default function Footer() {
                         </div>
                       )}
                       <Markdown removeMedia>{post.body}</Markdown>
+                      <div className="mt-1 flex justify-center">
+                        <EditPostButton
+                          post={post}
+                          label="editar rodapé"
+                          stopPropagation={false}
+                        />
+                      </div>
                     </article>
                   );
                 })}
               </div>
             )}
+            <div className="mt-3">
+              <AdminLoginLink />
+            </div>
           </div>
         </div>
       </div>

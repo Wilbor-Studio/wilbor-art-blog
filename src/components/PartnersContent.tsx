@@ -1,6 +1,7 @@
 'use client';
 
 import { getPostsByBlog, getUserAccount } from "@/../lib/hive/hive-client";
+import EditPostButton, { SECTION_EDIT_CLASS } from '@/admin/EditPostButton';
 import Markdown from "@/components/Markdown";
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
@@ -125,6 +126,12 @@ export default function PartnersContent() {
                 return (
                   <article key={post.permlink} className="mb-6 p-3">
                     <div className="space-y-0">
+                      <EditPostButton
+                        post={post}
+                        label="editar parceiros"
+                        stopPropagation={false}
+                        className={`mb-2 ${SECTION_EDIT_CLASS}`}
+                      />
                       {media.images.length > 0 && (
                         <div className="w-full mb-2">
                           {media.images.length === 1 ? (
