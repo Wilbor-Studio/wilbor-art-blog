@@ -273,7 +273,10 @@ export default function HivePostEditor({
       return;
     }
 
-    const targetPermlink = mode === 'edit' ? permlink : createPermlink(title);
+    // No modo criar, o permlink normalmente sai do título. Quando vem por
+    // prop, é conteúdo do site, que precisa de endereço fixo para a página
+    // sempre encontrar o mesmo post.
+    const targetPermlink = permlink || createPermlink(title);
     if (!targetPermlink) {
       setError('Permlink do post não encontrado.');
       return;
@@ -349,7 +352,7 @@ export default function HivePostEditor({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-0 sm:p-4"
+      className="wilbor-admin fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-0 sm:p-4"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       role="dialog"
       aria-modal="true"

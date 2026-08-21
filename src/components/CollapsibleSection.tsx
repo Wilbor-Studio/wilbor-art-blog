@@ -3,54 +3,79 @@
 import { useId, useState } from 'react';
 
 /**
- * Recolhe o conteúdo vindo do Hive atrás de um botão, deixando explícito de
- * onde o texto vem. A página mostra o resumo próprio do site e só expande o
- * post completo se a pessoa pedir.
+ * Bloco recolhível: mostra só o rótulo e expande o conteúdo quando a pessoa
+ * clica. Usado para não despejar textos e listas longas de uma vez na página.
+ *
+ * O selo (`badge`) é opcional — na seção "sobre" ele marca o texto que vem do
+ * Hive; nas subseções de parceiros não é usado.
  */
-export default function HivePostDisclosure({
+export default function CollapsibleSection({
   children,
-  label = 'saber mais',
+  label,
   labelOpen = 'mostrar menos',
+  badge,
+  count,
 }: {
   children: React.ReactNode
-  label?: string
+  label: string
   labelOpen?: string
+  badge?: string
+  /** Quantidade de itens escondidos, exibida à direita do rótulo. */
+  count?: number
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const contentId = useId();
 
   return (
-    <div className="border-t border-neutral-200 dark:border-neutral-800 pt-4">
+    <div className="border-t border-neutral-200 dark:border-neutral-800">
       <button
         type="button"
         onClick={() => setIsOpen(open => !open)}
         aria-expanded={isOpen}
         aria-controls={contentId}
         className={[
+          // O tailwind.css dá borda, fundo, sombra e padding a todo <button>
+          // do projeto (com dark:border-gray-700, um cinza azulado). Aqui o
+          // gatilho ocupa a largura toda, e essa caixa vira linhas azuladas
+          // atravessando a seção — por isso o cromo é zerado explicitamente.
+          'border-0 bg-transparent shadow-none rounded-none px-0',
           'group flex items-center gap-3 w-full text-left',
-          'py-1 transition-colors',
+          'py-4 sm:py-5 transition-colors',
           'text-neutral-500 dark:text-neutral-400',
           'hover:text-neutral-900 dark:hover:text-neutral-100',
         ].join(' ')}
       >
+        {badge && (
+          <span
+            className={[
+              'shrink-0 rounded px-1.5 py-0.5',
+              'text-[10px] uppercase tracking-[0.18em]',
+              'border border-neutral-300 dark:border-neutral-700',
+              'group-hover:border-current',
+            ].join(' ')}
+          >
+            {badge}
+          </span>
+        )}
+
         <span
           className={[
-            'shrink-0 rounded px-1.5 py-0.5',
-            'text-[10px] uppercase tracking-[0.18em]',
-            'border border-neutral-300 dark:border-neutral-700',
-            'group-hover:border-current',
+            'text-sm sm:text-base uppercase tracking-wide',
+            'font-medium',
           ].join(' ')}
         >
-          hive
-        </span>
-
-        <span className="text-xs sm:text-sm uppercase tracking-wide">
           {isOpen ? labelOpen : label}
         </span>
 
+        {typeof count === 'number' && !isOpen && (
+          <span className="text-xs text-neutral-400 dark:text-neutral-500">
+            {count}
+          </span>
+        )}
+
         <svg
           className={[
-            'ml-auto h-4 w-4 shrink-0 transition-transform duration-200',
+            'ml-auto h-5 w-5 shrink-0 transition-transform duration-200',
             isOpen ? 'rotate-180' : '',
           ].join(' ')}
           fill="none"
@@ -59,12 +84,16 @@ export default function HivePostDisclosure({
           strokeWidth={1.8}
           aria-hidden="true"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="m19.5 8.25-7.5 7.5-7.5-7.5"
+          />
         </svg>
       </button>
 
       {isOpen && (
-        <div id={contentId} className="mt-4 animate-fade-in">
+        <div id={contentId} className="pb-5 animate-fade-in">
           {children}
         </div>
       )}

@@ -5,8 +5,9 @@ import { getPostsByBlog, getUserAccount } from "@/../lib/hive/hive-client";
 import { isBlockedPermlink } from '@/lib/hive/blocked-posts';
 import EditPostButton, { SECTION_EDIT_CLASS } from '@/admin/EditPostButton';
 import AboutSummary from '@/components/AboutSummary';
-import HivePostDisclosure from '@/components/HivePostDisclosure';
+import CollapsibleSection from '@/components/CollapsibleSection';
 import Markdown from '@/components/Markdown';
+import { useSiteConfig } from '@/lib/hive/useSiteConfig';
 import { useEffect, useState } from 'react';
 
 import 'swiper/css';
@@ -131,6 +132,7 @@ function useDynamicAboutPost(username: string) {
 }
 
 export default function About() {
+  const siteConfig = useSiteConfig();
   const { posts: hivePosts, loading, error } = useDynamicAboutPost(
     process.env.NEXT_PUBLIC_HIVE_USERNAME || ''
   );
@@ -148,13 +150,13 @@ export default function About() {
             'border-b border-neutral-200 dark:border-neutral-800',
           ].join(' ')}
         >
-          Sobre Wilbor
+          {siteConfig.sectionTitles.about}
         </h2>
 
         <AboutSummary />
 
         {!loading && !error && hivePosts.length > 0 && (
-          <HivePostDisclosure label="saber mais sobre a história">
+          <CollapsibleSection badge="hive" label="saber mais sobre a história">
             {hivePosts.map((post, index) => {
               const media = extractMediaFromPost(post);
               return (
@@ -192,7 +194,7 @@ export default function About() {
                 </article>
               );
             })}
-          </HivePostDisclosure>
+          </CollapsibleSection>
         )}
       </div>
     </div>

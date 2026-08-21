@@ -1,6 +1,8 @@
 'use client';
 
 import EditPostButton from '@/admin/EditPostButton';
+import { useHiveAuth } from '@/admin/HiveAuthProvider';
+import ProjectFlagsButtons from '@/admin/ProjectFlagsButtons';
 import { IconX } from '@/components/IconX';
 import ImageCarousel from '@/components/ImageCarousel';
 import Markdown from '@/components/Markdown';
@@ -516,9 +518,9 @@ const MediaItem = ({
                 if (!isExpanded) onExpand();
             }}
         >
-            {/* Editar o projeto direto do card — só aparece para o artista logado */}
+            {/* Controles do artista logado — invisíveis para o público */}
             {mainItem.hiveMetadata && (
-                <div className="absolute top-2 right-2 z-30">
+                <div className="absolute top-2 right-2 z-30 flex flex-col items-end gap-1">
                     <EditPostButton
                         post={{
                             title: mainItem.title,
@@ -529,6 +531,22 @@ const MediaItem = ({
                         }}
                         fallbackTitle={mainItem.title}
                     />
+                    <ProjectFlagsButtons
+                        author={mainItem.hiveMetadata.author}
+                        permlink={mainItem.hiveMetadata.permlink}
+                        title={mainItem.title || ''}
+                        body={mainItem.hiveMetadata.body}
+                        jsonMetadata={mainItem.hiveMetadata.json_metadata}
+                        isHidden={mainItem.isHidden}
+                        isFeatured={mainItem.isFeatured}
+                    />
+                </div>
+            )}
+
+            {/* Aviso de que este card não aparece para quem visita */}
+            {mainItem.isHidden && (
+                <div className="absolute top-2 left-2 z-30 rounded-full bg-amber-500/90 px-2 py-0.5 font-mono text-[10px] text-black">
+                    oculto do site
                 </div>
             )}
             <div className={clsx(
@@ -826,15 +844,22 @@ export default function PhotoGridContainer({
     selectedTag: string | null;
     setSelectedTag: (tag: string | null) => void;
 }) {
+    const { isAdmin } = useHiveAuth();
     const [expandedPermlinks, setExpandedPermlinks] = useState<string[]>([]);
     const [hasLargeContentMap, setHasLargeContentMap] = useState<Record<string, boolean>>({});
     const groupedMedia = groupMediaByPermlink(media);
     const allTags = Array.from(new Set(media.flatMap(item => item.tags || [])));
     const mediaGroups = Array.from(groupedMedia.entries())
         .filter(([_, group]) => {
+            // Projetos escondidos continuam visíveis para o artista logado —
+            // senão ele não teria como reexibi-los depois de esconder.
+            if (group[0].isHidden && !isAdmin) return false;
             if (!selectedTag) return true;
             return group[0].tags?.includes(selectedTag);
         })
+        // Destaques primeiro, mantendo a ordem original entre os iguais.
+        .sort(([, a], [, b]) =>
+            Number(Boolean(b[0].isFeatured)) - Number(Boolean(a[0].isFeatured)))
         .map(([permlink, group]) => ({
             permlink,
             group,

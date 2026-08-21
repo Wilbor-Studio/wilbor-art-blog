@@ -53,15 +53,19 @@ export async function getHivePosts(username: string) {
     const visiblePosts = posts.filter(post => !isBlockedPermlink(post.permlink));
     
     const formattedPosts = visiblePosts.flatMap(post => {
-      // Check if the post has the "hidden" tag
+      // Posts marcados como escondidos ou em destaque continuam vindo daqui,
+      // apenas sinalizados. Quem some com os escondidos é a grade, no cliente,
+      // que sabe se o artista está logado — se filtrássemos aqui, ele
+      // esconderia um projeto e perderia o acesso para reexibi-lo.
+      let isHidden = false;
+      let isFeatured = false;
       try {
         const metadata = JSON.parse(post.json_metadata || '{}');
-        const postTags = metadata.tags || [];
-        if (postTags.includes('hidden')) {
-          return [];
-        }
+        const postTags: string[] = metadata.tags || [];
+        isHidden = postTags.includes('hidden');
+        isFeatured = postTags.includes('destaque');
       } catch (e) {
-        console.warn('Error checking hidden tag:', e);
+        console.warn('Error checking post flags:', e);
       }
 
       const mediaItems = MarkdownRenderer.extractMediaFromHive(post);
@@ -139,6 +143,8 @@ export async function getHivePosts(username: string) {
           },
           author: post.author,
           permlink: post.permlink,
+          isHidden,
+          isFeatured,
         } as Photo;
       });
     });

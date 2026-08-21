@@ -143,7 +143,7 @@ export default function HiveLoginModal({
       />
 
       <div
-        className="fixed inset-0 z-[51] flex items-center justify-center bg-black/70 backdrop-blur-[2px] p-4"
+        className="wilbor-admin fixed inset-0 z-[51] flex items-center justify-center bg-black/70 backdrop-blur-[2px] p-4"
         role="dialog"
         aria-modal="true"
         aria-label="Entrar com conta Hive"

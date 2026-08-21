@@ -160,6 +160,72 @@ export async function broadcastOperations(
   throw new Error('Sessão sem chave de posting e sem Hive Keychain disponível.');
 }
 
+/**
+ * Liga ou desliga uma tag de controle ('hidden', 'destaque') num post já
+ * publicado, preservando título, corpo e o restante do metadata.
+ *
+ * O Hive não tem "editar um campo": toda alteração reenvia o post inteiro.
+ * Por isso os valores atuais precisam vir junto — mandar só a tag apagaria
+ * o conteúdo.
+ */
+export async function toggleProjectTag({
+  username,
+  postingKey,
+  author,
+  permlink,
+  title,
+  body,
+  jsonMetadata,
+  tag,
+  enabled,
+}: {
+  username: string
+  postingKey?: string | null
+  author: string
+  permlink: string
+  title: string
+  body: string
+  jsonMetadata?: string
+  tag: string
+  enabled: boolean
+}) {
+  let metadata: Record<string, unknown> = {};
+  try {
+    metadata = jsonMetadata ? JSON.parse(jsonMetadata) : {};
+  } catch {
+    metadata = {};
+  }
+
+  const currentTags: string[] = Array.isArray(metadata.tags)
+    ? (metadata.tags as string[])
+    : [];
+
+  const nextTags = enabled
+    ? normalizeTags([...currentTags, tag])
+    : currentTags.filter(item => item !== tag);
+
+  if (nextTags.length === 0) {
+    throw new Error('O post precisa ter pelo menos 1 tag.');
+  }
+
+  const operations: Operation[] = [[
+    'comment',
+    {
+      parent_author: '',
+      // A categoria é imutável depois de publicado; o Hive ignora este valor
+      // numa edição, mas o campo continua obrigatório.
+      parent_permlink: nextTags[0],
+      author,
+      permlink,
+      title,
+      body,
+      json_metadata: JSON.stringify({ ...metadata, tags: nextTags }),
+    },
+  ]];
+
+  await broadcastOperations(username, operations, postingKey);
+}
+
 /** Extrai title/body/tags/imagens de um post do Hive para preencher o editor. */
 export function readPostForEditor(post: {
   title?: string

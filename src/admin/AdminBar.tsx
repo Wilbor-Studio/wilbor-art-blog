@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useHiveAuth } from './HiveAuthProvider';
 import HivePostEditor from './HivePostEditor';
+import SiteSettingsPanel from './SiteSettingsPanel';
 
 /**
  * Barra flutuante do artista. Só aparece para a conta dona do site — para o
@@ -12,6 +13,7 @@ import HivePostEditor from './HivePostEditor';
 export default function AdminBar() {
   const { isAdmin, isReady, username, logout } = useHiveAuth();
   const [isCreating, setIsCreating] = useState(false);
+  const [isConfiguring, setIsConfiguring] = useState(false);
   const router = useRouter();
 
   if (!isReady || !isAdmin) return null;
@@ -19,7 +21,7 @@ export default function AdminBar() {
   return (
     <>
       <div
-        className="fixed z-40 bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5
+        className="wilbor-admin fixed z-40 bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5
                    rounded-full border border-zinc-700 bg-zinc-950/95 backdrop-blur-md
                    px-2 py-1.5 shadow-2xl max-w-[calc(100vw-1.5rem)]"
         aria-label="Controles do artista"
@@ -35,6 +37,16 @@ export default function AdminBar() {
                      text-zinc-950 hover:bg-zinc-200 transition whitespace-nowrap"
         >
           + novo projeto
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setIsConfiguring(true)}
+          title="Barra de aviso, SEO e títulos das seções"
+          className="rounded-full border border-zinc-700 px-3 py-1.5 font-mono text-xs
+                     text-zinc-300 hover:border-white hover:text-white transition whitespace-nowrap"
+        >
+          site
         </button>
 
         <button
@@ -56,6 +68,10 @@ export default function AdminBar() {
           sair
         </button>
       </div>
+
+      {isConfiguring && (
+        <SiteSettingsPanel onClose={() => setIsConfiguring(false)} />
+      )}
 
       {isCreating && (
         <HivePostEditor
