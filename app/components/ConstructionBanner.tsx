@@ -3,6 +3,9 @@ const PORTFOLIO_URL = 'https://cargocollective.com/wilbor';
 export default function ConstructionBanner() {
   return (
     <div
+      // O botão fixo do menu mede este elemento para se alinhar à faixa do
+      // header enquanto o banner estiver visível.
+      id="construction-banner"
       className={[
         'w-full border-b',
         'border-neutral-200 dark:border-neutral-800',
