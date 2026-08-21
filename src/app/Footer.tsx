@@ -1,11 +1,13 @@
 'use client';
 
 import AdminLoginLink from '@/admin/AdminLoginLink';
+import FooterContactForm from '@/components/FooterContactForm';
 import EditPostButton from '@/admin/EditPostButton';
 import ImageCarousel from '@/components/ImageCarousel';
 import Markdown from '@/components/Markdown';
 import { getPostsByBlog, getUserAccount } from '@/../lib/hive/hive-client';
 import { useEffect, useState } from 'react';
+import { extractContactTargets, type ContactTargets } from '@/utility/contact-targets';
 
 const TITLE_KEYWORDS = [
   'rodape',
@@ -67,8 +69,13 @@ function extractImagesFromPost(
   }));
 }
 
+const CONTACT_KEYWORDS = ['contato', 'contact', 'fale conosco', 'get in touch'];
+
 function useDynamicFooterPost(username: string) {
   const [posts, setPosts] = useState<HivePost[]>([]);
+  // Os destinos de contato saem do mesmo lote de posts já buscado aqui,
+  // para não disparar uma segunda chamada ao Hive só por causa do formulário.
+  const [contactTargets, setContactTargets] = useState<ContactTargets>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -98,6 +105,15 @@ function useDynamicFooterPost(username: string) {
           ),
         );
 
+        const contactPost = allPosts.find((post: HivePost) =>
+          post.title && CONTACT_KEYWORDS.some((keyword) =>
+            post.title.toLowerCase().includes(keyword.toLowerCase()),
+          ),
+        );
+        if (contactPost?.body) {
+          setContactTargets(extractContactTargets(contactPost.body));
+        }
+
         if (matchingPosts.length > 0) {
           setPosts(matchingPosts);
         } else {
@@ -110,12 +126,12 @@ function useDynamicFooterPost(username: string) {
     })();
   }, [username]);
 
-  return { posts, loading, error };
+  return { posts, contactTargets, loading, error };
 }
 
 export default function Footer() {
   const username = process.env.NEXT_PUBLIC_HIVE_USERNAME || '';
-  const { posts, loading, error } = useDynamicFooterPost(username);
+  const { posts, contactTargets, loading, error } = useDynamicFooterPost(username);
 
   return (
     <footer className="w-full pb-4">
@@ -138,6 +154,12 @@ export default function Footer() {
                           className={[
                             'w-full max-w-[120px] sm:max-w-[140px]',
                             'mx-auto mb-2',
+                            // A marca é um PNG com o quadrado texturizado em
+                            // cinza opaco e o lettering vazado. No claro isso
+                            // funciona; no escuro o quadrado vira um bloco
+                            // aceso. Escurecer preserva a textura e o vazado
+                            // (o filtro não mexe no canal alfa).
+                            'dark:brightness-[0.6]',
                           ].join(' ')}
                         >
                           <ImageCarousel images={images} inExpandedCard />
@@ -156,6 +178,8 @@ export default function Footer() {
                 })}
               </div>
             )}
+            <FooterContactForm targets={contactTargets} />
+
             <div className="mt-3">
               <AdminLoginLink />
             </div>
