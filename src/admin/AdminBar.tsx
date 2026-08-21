@@ -14,9 +14,29 @@ export default function AdminBar() {
   const { isAdmin, isReady, username, logout } = useHiveAuth();
   const [isCreating, setIsCreating] = useState(false);
   const [isConfiguring, setIsConfiguring] = useState(false);
+  // A barra é fixa no rodapé e cobre o conteúdo dessa faixa da página —
+  // atrapalha justamente ao conferir o rodapé e o fim das seções.
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const router = useRouter();
 
   if (!isReady || !isAdmin) return null;
+
+  if (isCollapsed) {
+    return (
+      <button
+        type="button"
+        onClick={() => setIsCollapsed(false)}
+        aria-label="Mostrar controles do artista"
+        title="Controles do artista"
+        className="wilbor-admin fixed z-40 bottom-3 left-1/2 -translate-x-1/2
+                   rounded-full border border-zinc-700 bg-zinc-950/95 backdrop-blur-md
+                   px-3 py-1.5 font-mono text-xs text-zinc-400 shadow-2xl
+                   hover:text-white hover:border-zinc-500 transition"
+      >
+        editar
+      </button>
+    );
+  }
 
   return (
     <>
@@ -52,11 +72,12 @@ export default function AdminBar() {
         <button
           type="button"
           onClick={() => router.refresh()}
-          title="Recarregar conteúdo do Hive"
+          title="Buscar de novo o conteúdo no Hive. Útil logo após publicar,
+                 já que a rede leva alguns segundos para servir a versão nova."
           className="rounded-full border border-zinc-700 px-3 py-1.5 font-mono text-xs
                      text-zinc-300 hover:border-white hover:text-white transition whitespace-nowrap"
         >
-          atualizar
+          recarregar
         </button>
 
         <button
@@ -66,6 +87,17 @@ export default function AdminBar() {
                      hover:text-white transition whitespace-nowrap"
         >
           sair
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setIsCollapsed(true)}
+          aria-label="Recolher os controles"
+          title="Recolher"
+          className="rounded-full px-2 py-1.5 font-mono text-xs text-zinc-600
+                     hover:text-white transition"
+        >
+          ×
         </button>
       </div>
 
