@@ -178,16 +178,29 @@ export async function getHivePosts(username: string) {
 export type Tag = { tag: string; count: number };
 export type Tags = Tag[];
 
+/**
+ * Tags que controlam o comportamento do site e não são assunto de projeto.
+ * Nunca devem aparecer como filtro no menu.
+ */
+export const CONTROL_TAGS = new Set(['hidden', 'destaque', 'site']);
+
 export function extractAndCountTags(
   posts: Discussion[],
   paginatedPosts: Photo[]
 ): Tags {
   const tagCount = new Map<string, number>();
 
-  // Filter only posts from the current page
-  const currentPagePermlinks = new Set(paginatedPosts.map(post => post.permlink));
+  // Posts escondidos ficam de fora da contagem. Eles passaram a chegar aqui
+  // quando o filtro saiu do servidor, e sem esta exclusão as tags de um
+  // projeto oculto apareceriam no menu para quem visita — levando a uma
+  // página de tag vazia, já que /tag/[tag] continua escondendo o post.
+  const visiblePermlinks = new Set(
+    paginatedPosts
+      .filter(post => !post.isHidden)
+      .map(post => post.permlink)
+  );
   const currentPagePosts = posts.filter(post =>
-    currentPagePermlinks.has(post.permlink)
+    visiblePermlinks.has(post.permlink)
   );
 
   currentPagePosts.forEach(post => {
@@ -197,7 +210,7 @@ export function extractAndCountTags(
 
       if (Array.isArray(postTags)) {
         postTags.forEach(tag => {
-          if (typeof tag === 'string') {
+          if (typeof tag === 'string' && !CONTROL_TAGS.has(tag)) {
             tagCount.set(tag, (tagCount.get(tag) || 0) + 1);
           }
         });

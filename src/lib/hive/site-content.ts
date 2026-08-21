@@ -102,7 +102,13 @@ export function buildSiteConfigBody(config: SiteConfig) {
   ].join('\n');
 }
 
-/** Busca um post pelo permlink. Devolve null se não existir. */
+/**
+ * Busca um post pelo permlink. Devolve null se não existir.
+ *
+ * O timeout não é opcional aqui: esta chamada entra no render de toda página
+ * (metadados e barra de aviso). Sem ele, um nó do Hive que aceite a conexão e
+ * pare de responder deixaria a página pendurada em vez de cair no padrão.
+ */
 export async function fetchPostBody(permlink: string): Promise<string | null> {
   if (!SITE_AUTHOR) return null;
 
@@ -116,6 +122,7 @@ export async function fetchPostBody(permlink: string): Promise<string | null> {
         params: [SITE_AUTHOR, permlink],
         id: 1,
       }),
+      signal: AbortSignal.timeout(5000),
       // O conteúdo muda raramente; evita uma ida à rede a cada navegação.
       next: { revalidate: 60 },
     });
