@@ -3,7 +3,11 @@
 
 import { getPostsByBlog, getUserAccount } from "@/../lib/hive/hive-client";
 import { isBlockedPermlink } from '@/lib/hive/blocked-posts';
+import EditPostButton, { SECTION_EDIT_CLASS } from '@/admin/EditPostButton';
+import AboutSummary from '@/components/AboutSummary';
+import CollapsibleSection from '@/components/CollapsibleSection';
 import Markdown from '@/components/Markdown';
+import { useSiteConfig } from '@/lib/hive/useSiteConfig';
 import { useEffect, useState } from 'react';
 
 import 'swiper/css';
@@ -128,6 +132,7 @@ function useDynamicAboutPost(username: string) {
 }
 
 export default function About() {
+  const siteConfig = useSiteConfig();
   const { posts: hivePosts, loading, error } = useDynamicAboutPost(
     process.env.NEXT_PUBLIC_HIVE_USERNAME || ''
   );
@@ -135,13 +140,34 @@ export default function About() {
   return (
     <div className="w-full px-2 sm:px-8 pt-2 md:px-12 py-6 sm:py-8 dark:text-gray-200 text-left">
       <div className="max-w-full sm:max-w-4xl w-full text-left space-y-4 sm:space-y-3 mx-0">
+        {/* Título e resumo são conteúdo do site: ficam de fora do gate do
+            Hive para continuarem aparecendo se o fetch falhar. */}
+        <h2
+          className={[
+            'font-mono text-xs sm:text-sm uppercase tracking-[0.18em]',
+            'text-neutral-500 dark:text-neutral-400',
+            'pb-2 mb-4 sm:mb-6',
+            'border-b border-neutral-200 dark:border-neutral-800',
+          ].join(' ')}
+        >
+          {siteConfig.sectionTitles.about}
+        </h2>
+
+        <AboutSummary />
+
         {!loading && !error && hivePosts.length > 0 && (
-          <div className="space-y-3">
+          <CollapsibleSection badge="hive" label="saber mais sobre a história">
             {hivePosts.map((post, index) => {
               const media = extractMediaFromPost(post);
               return (
                 <article key={post.permlink} className="mb-4 sm:mb-6 p-2 sm:p-3">
                   <div className="space-y-1 sm:space-y-0">
+                    <EditPostButton
+                      post={post}
+                      label="editar sobre"
+                      stopPropagation={false}
+                      className={`mb-2 ${SECTION_EDIT_CLASS}`}
+                    />
                     <Markdown images={media.images.map((img, imgIndex) => ({ src: img, alt: `Imagem ${imgIndex + 1} do post: ${post.title}` }))}>
                       {post.body}
                     </Markdown>
@@ -168,7 +194,7 @@ export default function About() {
                 </article>
               );
             })}
-          </div>
+          </CollapsibleSection>
         )}
       </div>
     </div>

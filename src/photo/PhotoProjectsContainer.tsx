@@ -1,5 +1,8 @@
 'use client';
 
+import EditPostButton from '@/admin/EditPostButton';
+import { useHiveAuth } from '@/admin/HiveAuthProvider';
+import ProjectFlagsButtons from '@/admin/ProjectFlagsButtons';
 import { IconX } from '@/components/IconX';
 import ImageCarousel from '@/components/ImageCarousel';
 import Markdown from '@/components/Markdown';
@@ -29,6 +32,12 @@ const formatPinataUrl = (url: string): string => {
 
 function normalizeImageSrc(src?: string | null) {
     return (src || '').trim();
+}
+
+// Mesma imagem pode chegar com query string diferente (token de gateway IPFS),
+// então a comparação usa só a parte estável da URL.
+function imageIdentity(src?: string | null) {
+    return normalizeImageSrc(src).split('?')[0].split('#')[0];
 }
 
 function getPostImages(item: Media): string[] {
@@ -388,10 +397,14 @@ const MediaItem = ({
         }
     }, [isExpanded, mainItem.hiveMetadata?.body, mainItem.src]);
 
-    // Imagens do carrossel em tela cheia: começa pela thumb exibida no card e segue com as demais (sem duplicar).
-    const fullscreenImages = Array.from(
-        new Set([updatedThumbnail || thumbnailUrl, ...images].filter(Boolean) as string[])
-    ).map((src) => ({ src, alt: mainItem.title || '' }));
+    // Tela cheia mostra o conteúdo do post sem repetir a capa do card.
+    const coverIdentities = [updatedThumbnail, thumbnailUrl, mainItem.thumbnailSrc]
+        .map(imageIdentity)
+        .filter(Boolean);
+
+    const fullscreenImages = Array.from(new Set(images.filter(Boolean)))
+        .filter((src) => !coverIdentities.includes(imageIdentity(src)))
+        .map((src) => ({ src, alt: mainItem.title || '' }));
 
     const renderMedia = (media: Media, isMainVideo: boolean = false) => {
         if (media.src?.includes(SKATEHIVE_URL)) {
@@ -496,7 +509,7 @@ const MediaItem = ({
     return (
         <div
             className={clsx(
-                'rounded-lg overflow-hidden h-full group transition-colors duration-100',
+                'relative rounded-lg overflow-hidden h-full group transition-colors duration-100',
                 'bg-white text-black dark:bg-black dark:text-white',
                 !isExpanded && 'md:border-t-8 md:border-l-8 md:border-r-8 md:border-b-0 md:border-white md:dark:border-black md:hover:bg-black md:hover:text-white md:hover:border-t-black md:hover:border-l-black md:hover:border-r-black md:dark:hover:bg-white md:dark:hover:text-black md:dark:hover:border-t-white md:dark:hover:border-l-white md:dark:hover:border-r-white',
                 isExpanded && 'p-0 sm:p-2'
@@ -505,6 +518,37 @@ const MediaItem = ({
                 if (!isExpanded) onExpand();
             }}
         >
+            {/* Controles do artista logado — invisíveis para o público */}
+            {mainItem.hiveMetadata && (
+                <div className="absolute top-2 right-2 z-30 flex flex-col items-end gap-1">
+                    <EditPostButton
+                        post={{
+                            title: mainItem.title,
+                            body: mainItem.hiveMetadata.body,
+                            author: mainItem.hiveMetadata.author,
+                            permlink: mainItem.hiveMetadata.permlink,
+                            json_metadata: mainItem.hiveMetadata.json_metadata,
+                        }}
+                        fallbackTitle={mainItem.title}
+                    />
+                    <ProjectFlagsButtons
+                        author={mainItem.hiveMetadata.author}
+                        permlink={mainItem.hiveMetadata.permlink}
+                        title={mainItem.title || ''}
+                        body={mainItem.hiveMetadata.body}
+                        jsonMetadata={mainItem.hiveMetadata.json_metadata}
+                        isHidden={mainItem.isHidden}
+                        isFeatured={mainItem.isFeatured}
+                    />
+                </div>
+            )}
+
+            {/* Aviso de que este card não aparece para quem visita */}
+            {mainItem.isHidden && (
+                <div className="absolute top-2 left-2 z-30 rounded-full bg-amber-500/90 px-2 py-0.5 font-mono text-[10px] text-black">
+                    oculto do site
+                </div>
+            )}
             <div className={clsx(
                 'w-full',
                 isExpanded && 'transition-all duration-300',
@@ -698,7 +742,7 @@ const MediaItem = ({
                                     </button>
                                 )} */}
                                 {/* Botão de zoom para abrir o post inteiro em destaque central (tela cheia) */}
-                                {images.length > 0 && (
+                                {fullscreenImages.length > 0 && (
                                     <button
                                         onClick={e => {
                                             e.stopPropagation();
@@ -800,15 +844,22 @@ export default function PhotoGridContainer({
     selectedTag: string | null;
     setSelectedTag: (tag: string | null) => void;
 }) {
+    const { isAdmin } = useHiveAuth();
     const [expandedPermlinks, setExpandedPermlinks] = useState<string[]>([]);
     const [hasLargeContentMap, setHasLargeContentMap] = useState<Record<string, boolean>>({});
     const groupedMedia = groupMediaByPermlink(media);
     const allTags = Array.from(new Set(media.flatMap(item => item.tags || [])));
     const mediaGroups = Array.from(groupedMedia.entries())
         .filter(([_, group]) => {
+            // Projetos escondidos continuam visíveis para o artista logado —
+            // senão ele não teria como reexibi-los depois de esconder.
+            if (group[0].isHidden && !isAdmin) return false;
             if (!selectedTag) return true;
             return group[0].tags?.includes(selectedTag);
         })
+        // Destaques primeiro, mantendo a ordem original entre os iguais.
+        .sort(([, a], [, b]) =>
+            Number(Boolean(b[0].isFeatured)) - Number(Boolean(a[0].isFeatured)))
         .map(([permlink, group]) => ({
             permlink,
             group,

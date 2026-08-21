@@ -1,0 +1,28 @@
+/*
+ * O tailwind.css aplica cromo de formulário a todo <button> do projeto —
+ * borda, fundo, sombra, padding e cantos arredondados — com
+ * `dark:border-gray-700`, que é um cinza azulado. Nas telas do painel do
+ * artista isso aparece como caixas azuladas em volta de ícones e ações.
+ *
+ * A regra precisa ficar dentro de @layer base, junto com o padrão que ela
+ * corrige. Fora de layer ela venceria também os utilitários do Tailwind —
+ * em CSS, estilo sem layer ganha de todo estilo em layer, e a precedência
+ * de layer é resolvida antes da especificidade. Foi o que aconteceu numa
+ * primeira versão: o bg-white do botão "novo projeto" era descartado e o
+ * texto escuro dele sumia na barra escura.
+ *
+ * Dentro de base: empata em especificidade com a regra de `button` do
+ * projeto e vence por vir depois, mas perde para os utilitários, que ficam
+ * na layer seguinte. Assim cada botão continua mandando no próprio visual.
+ */
+
+@layer base {
+  :where(.wilbor-admin) button {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+    min-height: 0;
+  }
+}

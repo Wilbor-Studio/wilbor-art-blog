@@ -31,8 +31,39 @@ export default function ViewSwitcher({
   const [fetchedTags, setFetchedTags] = useState<string[]>([]);
   const { theme, systemTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  // Deslocamento do botão fixo do menu para ele ficar dentro da faixa do
+  // header, que o banner de construção empurra para baixo. Vai a zero assim
+  // que o banner sai de cena no scroll, devolvendo o botão ao topo.
+  const [menuTopOffset, setMenuTopOffset] = useState(0);
 
   useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    const banner = document.getElementById('construction-banner');
+    if (!banner) return;
+
+    let ticking = false;
+
+    const measure = () => {
+      ticking = false;
+      setMenuTopOffset(Math.max(0, banner.getBoundingClientRect().bottom));
+    };
+
+    const schedule = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(measure);
+    };
+
+    measure();
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+
+    return () => {
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+    };
+  }, []);
 
   // If the page didn't provide tags, fetch them from the API so other routes also
   // show the same tags as the projects page.
@@ -119,8 +150,8 @@ export default function ViewSwitcher({
         </div>
       </div>
       <div
-        className="fixed top-0 right-0 z-50 hidden md:flex pointer-events-none"
-        style={{ width: '90px', height: '90px' }}
+        className="fixed right-0 z-50 hidden md:flex pointer-events-none"
+        style={{ top: menuTopOffset, width: '90px', height: '90px' }}
         aria-label="Atalho para o menu de tags"
       >
         <div
@@ -136,8 +167,8 @@ export default function ViewSwitcher({
         </div>
       </div>
       <div
-        className="fixed top-0 right-0 z-50 md:hidden pointer-events-none"
-        style={{ width: '64px', height: '64px' }}
+        className="fixed right-0 z-50 md:hidden pointer-events-none"
+        style={{ top: menuTopOffset, width: '64px', height: '64px' }}
         aria-label="Atalho móvel para o menu de tags"
       >
         <div

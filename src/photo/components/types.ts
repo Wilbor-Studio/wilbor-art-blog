@@ -40,6 +40,10 @@ export  interface Photo {
   author?: string;
   permlink?: string;
   iframeHtml?: string;
+  /** Marcado com a tag 'hidden': fora da grade para o público. */
+  isHidden?: boolean;
+  /** Marcado com a tag 'destaque': aparece antes dos demais. */
+  isFeatured?: boolean;
 }
 
 export interface Media {
@@ -54,6 +58,8 @@ export interface Media {
   height?: number;
   iframeHtml?: string;
   tags?: string[];
+  isHidden?: boolean;
+  isFeatured?: boolean;
   // Adicionando hiveMetadata
   hiveMetadata?: {
     author: string;

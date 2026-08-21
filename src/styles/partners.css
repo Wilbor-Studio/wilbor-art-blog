@@ -1,36 +1,34 @@
-.partner-heading {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-top: 0.25rem;
-  margin-bottom: 0;
-  color: #f3f4f6;
-  line-height: 1.2;
+/*
+ * Listas de parceiros. Cada categoria abre num bloco recolhível e pode ter
+ * dezenas de nomes curtos — em coluna única viraria uma tira longa, então a
+ * lista flui em colunas conforme a largura disponível.
+ */
+
+.partner-list ul {
+  columns: 2;
+  column-gap: 2rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
-.partner-divider {
-  border: none;
-  border-top: 1px solid #e5e7eb;
-  margin: 0.25rem 0;
-  opacity: 0.6;
+.partner-list li {
+  /* Impede que um nome seja cortado no meio, entre o fim de uma coluna e o
+     começo da seguinte. */
+  break-inside: avoid;
+  page-break-inside: avoid;
+  padding: 0.1rem 0;
+  line-height: 1.5;
 }
 
-.dark .partner-divider {
-  border-top-color: #374151;
+@media (min-width: 640px) {
+  .partner-list ul {
+    columns: 3;
+  }
 }
 
-.partner-date {
-  color: #ef4444;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.dark .partner-date {
-  color: #f87171;
-}
-
-.partner-content p {
-  margin-bottom: 0;
-  margin-top: 0;
-  line-height: 1.2;
-  padding-bottom: 0.125rem;
+@media (min-width: 1024px) {
+  .partner-list ul {
+    columns: 4;
+  }
 }

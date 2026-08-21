@@ -1,9 +1,10 @@
 import {
   BASE_URL,
-  DEFAULT_THEME,
-  SITE_DESCRIPTION,
-  SITE_TITLE
+  DEFAULT_THEME
 } from '@/app/config';
+import { fetchSiteConfig } from '@/lib/hive/site-content';
+import AdminBar from '@/admin/AdminBar';
+import HiveAuthProvider from '@/admin/HiveAuthProvider';
 import Footer from '@/app/Footer';
 import ContactContent from '@/components/ContactContent';
 import ToasterWithThemes from '@/toast/ToasterWithThemes';
@@ -16,10 +17,19 @@ import { Metadata } from 'next/types';
 import '../tailwind.css';
 import '../styles/markdown-contact.css';
 import '../src/styles/exhibitions.css';
+import '../src/styles/partners.css';
+import '../src/styles/admin.css';
 import ConstructionBanner from './components/ConstructionBanner';
 import JsonLd from './components/JsonLd';
 
-export const metadata: Metadata = {
+export async function generateMetadata(): Promise<Metadata> {
+  // Título e descrição saem das configurações que o artista edita pelo
+  // painel; o config.ts continua sendo o padrão quando não há nada salvo.
+  const { seo } = await fetchSiteConfig();
+  const SITE_TITLE = seo.title;
+  const SITE_DESCRIPTION = seo.description;
+
+  return {
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
   ...BASE_URL && { metadataBase: new URL(BASE_URL) },
@@ -73,7 +83,8 @@ export const metadata: Metadata = {
     url: '/favicons/favicon.png',
     sizes: '180x180'
   }],
-};
+  };
+}
 
 export default function RootLayout({
   children,
@@ -91,6 +102,7 @@ export default function RootLayout({
       </head>
       <body className="bg-main">
           <ThemeProvider attribute="class" defaultTheme={DEFAULT_THEME}>
+            <HiveAuthProvider>
               <ConstructionBanner />
               <main >
                 <div className="flex flex-col items-center">
@@ -105,6 +117,8 @@ export default function RootLayout({
                 <Footer />
               </main>
               {/* <CommandK /> */}
+              <AdminBar />
+            </HiveAuthProvider>
             <Analytics debug={false} />
             <SpeedInsights debug={false} />
             <ToasterWithThemes />

@@ -1,4 +1,5 @@
 import { getPostsByAuthor } from '@/lib/hive/hive-client';
+import { CONTROL_TAGS } from '@/lib/hive/project-logic';
 import { NextResponse } from 'next/server';
 
 const extractAndCountTags = (posts: any[]) => {
@@ -10,7 +11,7 @@ const extractAndCountTags = (posts: any[]) => {
       const postTags = metadata.tags || [];
       if (Array.isArray(postTags)) {
         postTags.forEach((tag: any) => {
-          if (typeof tag === 'string' && tag !== 'hidden') {
+          if (typeof tag === 'string' && !CONTROL_TAGS.has(tag)) {
             tagCount.set(tag, (tagCount.get(tag) || 0) + 1);
           }
         });
