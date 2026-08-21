@@ -32,6 +32,12 @@ function normalizeImageSrc(src?: string | null) {
     return (src || '').trim();
 }
 
+// Mesma imagem pode chegar com query string diferente (token de gateway IPFS),
+// então a comparação usa só a parte estável da URL.
+function imageIdentity(src?: string | null) {
+    return normalizeImageSrc(src).split('?')[0].split('#')[0];
+}
+
 function getPostImages(item: Media): string[] {
     const thumbnail = normalizeImageSrc(item.thumbnailSrc);
     const bodyImages = extractImagesFromMarkdown(item.hiveMetadata?.body || '').map(normalizeImageSrc);
@@ -389,10 +395,14 @@ const MediaItem = ({
         }
     }, [isExpanded, mainItem.hiveMetadata?.body, mainItem.src]);
 
-    // Imagens do carrossel em tela cheia: começa pela thumb exibida no card e segue com as demais (sem duplicar).
-    const fullscreenImages = Array.from(
-        new Set([updatedThumbnail || thumbnailUrl, ...images].filter(Boolean) as string[])
-    ).map((src) => ({ src, alt: mainItem.title || '' }));
+    // Tela cheia mostra o conteúdo do post sem repetir a capa do card.
+    const coverIdentities = [updatedThumbnail, thumbnailUrl, mainItem.thumbnailSrc]
+        .map(imageIdentity)
+        .filter(Boolean);
+
+    const fullscreenImages = Array.from(new Set(images.filter(Boolean)))
+        .filter((src) => !coverIdentities.includes(imageIdentity(src)))
+        .map((src) => ({ src, alt: mainItem.title || '' }));
 
     const renderMedia = (media: Media, isMainVideo: boolean = false) => {
         if (media.src?.includes(SKATEHIVE_URL)) {
@@ -714,7 +724,7 @@ const MediaItem = ({
                                     </button>
                                 )} */}
                                 {/* Botão de zoom para abrir o post inteiro em destaque central (tela cheia) */}
-                                {images.length > 0 && (
+                                {fullscreenImages.length > 0 && (
                                     <button
                                         onClick={e => {
                                             e.stopPropagation();
