@@ -1,107 +1,97 @@
+/*
+ * Lista de exposições/exibições.
+ *
+ * O markdown segue sempre o mesmo padrão por entrada:
+ *
+ *   ## Título da exposição
+ *   07/05/2022            <- data: vira parágrafo ou h6 no markdown, e
+ *                            Markdown.tsx marca os dois com .exhibition-date
+ *   Descrição             <- uma ou mais linhas
+ *   Local — Cidade, UF
+ *
+ * O ritmo abaixo agrupa esses três blocos e abre espaço entre uma entrada
+ * e a seguinte, para a lista ser escaneável.
+ *
+ * Sobre os !important: Markdown.tsx aplica `style={{ color: '#888888' }}`
+ * inline em todos os títulos e parágrafos. Sem !important, a regra inline
+ * vence e a hierarquia de cor some.
+ */
+
 .exhibition-content {
-  margin-top: 0;
   font-size: 0.9rem !important;
-  line-height: 1.45 !important;
+  line-height: 1.6 !important;
 }
+
+/* ---- Título da lista ---------------------------------------------- */
 
 .exhibition-content h1 {
   font-size: 1.05rem !important;
   font-weight: 700;
-  margin-top: 0.35rem;
-  margin-bottom: 0.15rem;
-  color: #f3f4f6;
-  line-height: 1.25 !important;
+  letter-spacing: 0.05em;
+  line-height: 1.3 !important;
+  margin: 0 0 1.5rem !important;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid #e5e7eb;
+  color: #111827 !important;
 }
 
+.dark .exhibition-content h1 {
+  border-bottom-color: #262626;
+  color: #f5f5f5 !important;
+}
+
+/* ---- Cada exposição ------------------------------------------------ */
+
+/* A margem superior é o que separa visualmente uma entrada da outra. */
 .exhibition-content h2 {
-  font-size: 0.98rem !important;
+  font-size: 1rem !important;
   font-weight: 700;
-  margin-top: 0.35rem;
-  margin-bottom: 0.12rem;
-  color: #f3f4f6;
-  line-height: 1.25 !important;
+  line-height: 1.3 !important;
+  margin: 1.85rem 0 0.2rem !important;
+  color: #111827 !important;
 }
 
-.exhibition-content h3 {
-  font-size: 0.93rem !important;
-  font-weight: 600;
-  margin-top: 0.25rem;
-  margin-bottom: 0.1rem;
-  color: #f3f4f6;
-  line-height: 1.25 !important;
+.dark .exhibition-content h2 {
+  color: #f5f5f5 !important;
 }
 
+/* A primeira entrada encosta no título da lista, sem respiro dobrado. */
+.exhibition-content h1 + h2,
+.exhibition-content h2:first-child {
+  margin-top: 0 !important;
+}
+
+/* Subdivisões eventuais dentro de uma entrada. */
+.exhibition-content h3,
 .exhibition-content h4,
 .exhibition-content h5,
 .exhibition-content h6 {
-  font-size: 0.88rem !important;
-  line-height: 1.25 !important;
-  margin-top: 0.2rem !important;
-  margin-bottom: 0.08rem !important;
+  font-size: 0.92rem !important;
+  font-weight: 600;
+  line-height: 1.3 !important;
+  margin: 0.9rem 0 0.2rem !important;
+  color: #374151 !important;
 }
 
-.exhibition-content h6 {
-  color: #ef4444 !important;
-  font-size: 0.82rem !important;
-  font-weight: 600 !important;
-  margin-top: 1rem !important;
-  margin-bottom: 0.35rem !important;
-}
-
+.dark .exhibition-content h3,
+.dark .exhibition-content h4,
+.dark .exhibition-content h5,
 .dark .exhibition-content h6 {
-  color: #f87171 !important;
+  color: #d4d4d4 !important;
 }
 
-.exhibition-content p {
-  margin-bottom: 0.28rem !important;
-  margin-top: 0 !important;
-  line-height: 1.45 !important;
-  padding-bottom: 0 !important;
-}
+/* ---- Data ----------------------------------------------------------
+ * Legenda logo abaixo do título. O seletor precisa ser mais específico
+ * que ".exhibition-content h6", senão as datas escritas como h6 herdam o
+ * espaçamento de título e destoam das escritas como parágrafo.
+ */
 
-.exhibition-content p + p {
-  margin-top: 0.28rem !important;
-}
-
-.exhibition-content strong {
-  font-size: 0.94rem;
-  font-weight: 600;
-}
-
-.exhibition-content p:last-of-type {
-  margin-bottom: 0.125rem;
-}
-
-.exhibition-divider {
-  border: none;
-  border-top: 1px solid #e5e7eb;
-  margin: 0.25rem 0;
-  opacity: 0.6;
-}
-
-.dark .exhibition-divider {
-  border-top-color: #374151;
-}
-
-.exhibition-content h1,
-.exhibition-content h2,
-.exhibition-content h3 {
-  color: #1f2937;
-}
-
-.dark .exhibition-content h1,
-.dark .exhibition-content h2,
-.dark .exhibition-content h3 {
-  color: #f3f4f6;
-}
-
-.exhibition-date {
-  color: #ef4444 !important;
-  font-weight: 600;
+.exhibition-content .exhibition-date {
   font-size: 0.72rem !important;
-  line-height: 1.15 !important;
-  margin-top: 0.75rem !important;
-  margin-bottom: 0.28rem !important;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.2 !important;
+  margin: 0 0 0.6rem !important;
   display: block;
 }
 
@@ -110,74 +100,40 @@
   color: #ef4444 !important;
 }
 
-.exhibition-entry {
-  margin: 0 0 1rem 0;
-}
-
-.exhibition-line {
-  margin: 0;
-  line-height: 1.45;
-}
-
-.exhibition-title {
-  font-weight: 700;
-  font-size: 1.02rem;
-  margin-bottom: 0.14rem;
-}
-
-.exhibition-subtitle {
-  font-style: italic;
-  font-size: 0.98rem;
-  margin-bottom: 0.14rem;
-}
-
-.exhibition-location {
-  font-size: 0.98rem;
-  margin-bottom: 0.22rem;
-}
-
-.dark .exhibition-date {
-  color: #f87171 !important;
-}
-
 .dark .exhibition-content .exhibition-date,
 .dark .exhibition-content .exhibition-date * {
   color: #f87171 !important;
 }
 
+/* ---- Descrição ----------------------------------------------------- */
+
+.exhibition-content p {
+  margin: 0 0 0.25rem !important;
+  line-height: 1.6 !important;
+}
+
+.exhibition-content p:last-child {
+  margin-bottom: 0 !important;
+}
+
+.exhibition-content strong {
+  font-weight: 600;
+}
+
+/* ---- Telas maiores -------------------------------------------------- */
+
 @media (min-width: 640px) {
   .exhibition-content {
-    font-size: 0.96rem !important;
+    font-size: 0.95rem !important;
   }
 
   .exhibition-content h1 {
-    font-size: 1.06rem !important;
+    font-size: 1.1rem !important;
+    margin-bottom: 1.75rem !important;
   }
 
   .exhibition-content h2 {
-    font-size: 1rem !important;
-  }
-
-  .exhibition-content h3 {
-    font-size: 0.94rem !important;
-  }
-
-  .exhibition-content h4,
-  .exhibition-content h5,
-  .exhibition-content h6 {
-    font-size: 0.9rem !important;
-  }
-
-  .exhibition-entry {
-    margin-bottom: 1.2rem;
-  }
-
-  .exhibition-title {
-    font-size: 1.06rem;
-  }
-
-  .exhibition-subtitle,
-  .exhibition-location {
-    font-size: 1rem;
+    font-size: 1.05rem !important;
+    margin-top: 2.1rem !important;
   }
 }
