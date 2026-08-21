@@ -6,6 +6,7 @@ const PINATA_UPLOAD_URL = 'https://api.pinata.cloud/pinning/pinFileToIPFS';
 // fallback para funcionar com o mesmo .env que o projeto do dashboard usava.
 const PINATA_API_KEY =
   process.env.PINATA_JWT ||
+  process.env.NEXT_PUBLIC_PINATA_JWT ||
   process.env.PINATA_API_KEY ||
   process.env.NEXT_PUBLIC_PINATA_API_KEY;
 const PINATA_SECRET =
