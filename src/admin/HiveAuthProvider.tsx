@@ -9,6 +9,8 @@ import {
   useState,
 } from 'react';
 import HiveLoginModal from './HiveLoginModal';
+import LoginDiagnostics from './LoginDiagnostics';
+import { diag } from './diagnostics';
 
 export type HiveAuthMethod = 'keychain' | 'private';
 
@@ -68,8 +70,15 @@ export default function HiveAuthProvider({
         setPostingKey(localStorage.getItem(STORAGE_POSTING_KEY));
         setAuthMethod(localStorage.getItem(STORAGE_METHOD) as HiveAuthMethod | null);
       }
-    } catch {
+      diag('sessao.restaurada', {
+        logado: storedLoggedIn === 'true',
+        usuario: storedUsername,
+        metodo: localStorage.getItem(STORAGE_METHOD),
+        temChaveCifrada: Boolean(localStorage.getItem(STORAGE_POSTING_KEY)),
+      });
+    } catch (error) {
       // localStorage indisponível (modo privado, etc.) — segue deslogado
+      diag('sessao.localStorage-indisponivel', error);
     }
     setIsReady(true);
   }, []);
@@ -79,6 +88,7 @@ export default function HiveAuthProvider({
     method: HiveAuthMethod,
     key?: string,
   ) => {
+    diag('sessao.login', { usuario: nextUsername, metodo: method, dono: nextUsername === SITE_HIVE_USERNAME });
     setUsername(nextUsername);
     setAuthMethod(method);
     setPostingKey(method === 'private' && key ? key : null);
@@ -93,12 +103,14 @@ export default function HiveAuthProvider({
       } else {
         localStorage.removeItem(STORAGE_POSTING_KEY);
       }
-    } catch {
+    } catch (error) {
       // sessão só nesta aba
+      diag('sessao.nao-salvou', error);
     }
   }, []);
 
   const logout = useCallback(() => {
+    diag('sessao.logout');
     setUsername(null);
     setPostingKey(null);
     setAuthMethod(null);
@@ -114,7 +126,7 @@ export default function HiveAuthProvider({
     }
   }, []);
 
-  const openLogin = useCallback(() => setIsLoginOpen(true), []);
+  const openLogin = useCallback(() => { diag('login.modal-aberto'); setIsLoginOpen(true); }, []);
   const closeLogin = useCallback(() => setIsLoginOpen(false), []);
 
   const value = useMemo<HiveAuthValue>(() => ({
@@ -141,6 +153,7 @@ export default function HiveAuthProvider({
       {isLoginOpen && (
         <HiveLoginModal onLogin={login} onClose={closeLogin} />
       )}
+      <LoginDiagnostics />
     </HiveAuthContext.Provider>
   );
 }

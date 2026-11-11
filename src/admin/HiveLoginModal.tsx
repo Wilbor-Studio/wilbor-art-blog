@@ -6,17 +6,8 @@ import { hiveServerLoginWithPassword } from '../../lib/hive/server-functions';
 import type { HiveAuthMethod } from './HiveAuthProvider';
 import { SITE_HIVE_USERNAME } from './HiveAuthProvider';
 import SplashCursor from './SplashCursor';
-
-interface HiveKeychainWindow extends Window {
-  hive_keychain?: {
-    requestSignBuffer: (
-      username: string,
-      message: string,
-      keyType: string,
-      callback: (res: { success: boolean; message?: string }) => void,
-    ) => void;
-  };
-}
+import { diag } from './diagnostics';
+import { getKeychain, KeychainTimeoutError, keychainErrorMessage, keychainSignBuffer } from './keychain';
 
 export default function HiveLoginModal({
   onLogin,
@@ -66,6 +57,7 @@ export default function HiveLoginModal({
    * edição que a blockchain recusaria mais tarde.
    */
   function checkIsSiteOwner(candidate: string) {
+    diag('login.checa-dono', { digitado: username, normalizado: candidate, esperado: SITE_HIVE_USERNAME });
     if (!SITE_HIVE_USERNAME) {
       setError('Site sem NEXT_PUBLIC_HIVE_USERNAME configurado.');
       return false;
@@ -80,13 +72,13 @@ export default function HiveLoginModal({
   // Teclado do iPad pode inserir espaço depois do ponto ("wilbor. art").
   const normalizedUsername = () => username.replace(/\s+/g, '').replace(/^@/, '').toLowerCase();
 
-  const handleKeychainLogin = () => {
+  const handleKeychainLogin = async () => {
     setError('');
     const candidate = normalizedUsername();
     if (!checkIsSiteOwner(candidate)) return;
 
-    const win = window as HiveKeychainWindow;
-    if (!win.hive_keychain) {
+    if (!getKeychain()) {
+      diag('login.keychain.ausente');
       setError(
         navigator.maxTouchPoints > 0
           ? 'No iPad/celular o Keychain só funciona dentro do navegador do app Hive Keychain. Ou entre com a chave privada abaixo.'
@@ -96,19 +88,21 @@ export default function HiveLoginModal({
     }
 
     setKeychainLoading(true);
-    win.hive_keychain.requestSignBuffer(
-      candidate,
-      'login-wilbor.art',
-      'Posting',
-      (res) => {
-        setKeychainLoading(false);
-        if (res.success) {
-          onLogin(candidate, 'keychain');
-        } else {
-          setError(res.message || 'Falha ao autenticar com Hive Keychain.');
-        }
-      },
-    );
+    try {
+      const res = await keychainSignBuffer(candidate, 'login-wilbor.art');
+      if (res.success) {
+        diag('login.keychain.ok');
+        onLogin(candidate, 'keychain');
+      } else {
+        setError(keychainErrorMessage(res, 'Falha ao autenticar com Hive Keychain.'));
+      }
+    } catch (err) {
+      setError(err instanceof KeychainTimeoutError
+        ? `${err.message} Feche e abra o app Keychain e tente de novo, ou use a chave privada.`
+        : `Erro no Hive Keychain: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setKeychainLoading(false);
+    }
   };
 
   const handlePrivateKeyLogin = async () => {
@@ -123,14 +117,17 @@ export default function HiveLoginModal({
     }
 
     setPrivateKeyLoading(true);
+    diag('login.chave.pedido', { tamanhoChave: key.length, colouEspacos: key.length !== privateKey.length });
     try {
       const result = await hiveServerLoginWithPassword(candidate, key);
+      diag('login.chave.resposta', { success: result.validation.success, message: result.validation.message, type: result.type });
       if (result.validation.success && result.key) {
         onLogin(candidate, 'private', result.key);
       } else {
         setError(result.validation.message || 'Falha na autenticação.');
       }
-    } catch {
+    } catch (err) {
+      diag('login.chave.erro-servidor', err);
       setError('Erro ao conectar com o servidor.');
     } finally {
       setPrivateKeyLoading(false);

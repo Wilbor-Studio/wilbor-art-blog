@@ -1,5 +1,7 @@
 import type { Operation } from '@hiveio/dhive';
 import { sendHiveOperation } from '../../lib/hive/server-functions';
+import { diag } from './diagnostics';
+import { getKeychain, KeychainTimeoutError, keychainBroadcast, keychainErrorMessage } from './keychain';
 
 export const PINATA_GATEWAY = 'https://ipfs.skatehive.app/ipfs';
 
@@ -115,17 +117,6 @@ export function mediaToMarkdown(entries: { url: string; isVideo: boolean }[]) {
     .join('\n\n');
 }
 
-interface KeychainWindow extends Window {
-  hive_keychain?: {
-    requestBroadcast: (
-      username: string,
-      operations: Operation[],
-      keyType: string,
-      callback: (response: { success: boolean; message?: string }) => void,
-    ) => void;
-  };
-}
-
 /**
  * Publica as operações no Hive: usa o Keychain quando disponível e a sessão não
  * guarda chave; caso contrário assina no servidor com a chave cifrada.
@@ -135,25 +126,38 @@ export async function broadcastOperations(
   operations: Operation[],
   postingKey?: string | null,
 ) {
-  const keychain = typeof window !== 'undefined'
-    ? (window as KeychainWindow).hive_keychain
-    : undefined;
+  const keychain = getKeychain();
+  diag('publicar.inicio', {
+    username,
+    via: keychain && !postingKey ? 'keychain' : postingKey ? 'servidor' : 'nenhum',
+    operacoes: operations.map(operation => operation[0]),
+  });
 
   if (keychain && !postingKey) {
-    await new Promise<void>((resolve, reject) => {
-      keychain.requestBroadcast(username, operations, 'posting', response => {
-        if (!response?.success) {
-          reject(new Error(response?.message || 'Erro no Hive Keychain.'));
-          return;
-        }
-        resolve();
-      });
-    });
+    let response;
+    try {
+      response = await keychainBroadcast(username, operations);
+    } catch (error) {
+      if (error instanceof KeychainTimeoutError) {
+        // A operação pode ter sido assinada mesmo assim: evitar post duplicado.
+        throw new Error(`${error.message} Confira no Hive se a alteração entrou antes de tentar de novo.`);
+      }
+      throw error;
+    }
+    if (!response.success) {
+      throw new Error(keychainErrorMessage(response, 'Erro no Hive Keychain.'));
+    }
     return;
   }
 
   if (postingKey) {
-    await sendHiveOperation(postingKey, operations);
+    try {
+      await sendHiveOperation(postingKey, operations);
+      diag('publicar.servidor.ok');
+    } catch (error) {
+      diag('publicar.servidor.erro', error);
+      throw error;
+    }
     return;
   }
 
