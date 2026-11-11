@@ -217,6 +217,8 @@ function Panel() {
         <button
           type="button"
           onClick={() => setOpen(value => !value)}
+          aria-expanded={open}
+          aria-controls="wilbor-diag-report"
           className="w-full text-left px-3 py-1.5 border-0 bg-transparent rounded-none text-yellow-300 text-[11px] font-mono"
         >
           DIAGNÓSTICO · keychain: {keychainState} · {entries.length} eventos ·{' '}
@@ -233,7 +235,7 @@ function Panel() {
               <button type="button" className={buttonClass} onClick={turnOff}>desligar diagnóstico</button>
               {notice && <span className="self-center text-green-400">{notice}</span>}
             </div>
-            <pre className="max-h-[45vh] overflow-auto whitespace-pre-wrap break-all bg-neutral-950 border border-neutral-800 rounded p-2 m-0 text-[10.5px] text-neutral-200">
+            <pre id="wilbor-diag-report" className="max-h-[45vh] overflow-auto whitespace-pre-wrap break-all bg-neutral-950 border border-neutral-800 rounded p-2 m-0 text-[10.5px] text-neutral-200">
               {report()}
             </pre>
           </div>

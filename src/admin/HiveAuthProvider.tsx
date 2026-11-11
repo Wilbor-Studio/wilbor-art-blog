@@ -8,9 +8,12 @@ import {
   useMemo,
   useState,
 } from 'react';
+import dynamic from 'next/dynamic';
 import HiveLoginModal from './HiveLoginModal';
-import LoginDiagnostics from './LoginDiagnostics';
-import { diag } from './diagnostics';
+import { diag, isDiagEnabled } from './diagnostics';
+
+// Só baixado com ?debug=1 — visitantes não carregam o painel.
+const LoginDiagnostics = dynamic(() => import('./LoginDiagnostics'), { ssr: false });
 
 export type HiveAuthMethod = 'keychain' | 'private';
 
@@ -59,6 +62,8 @@ export default function HiveAuthProvider({
   const [authMethod, setAuthMethod] = useState<HiveAuthMethod | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [diagEnabled, setDiagEnabled] = useState(false);
+  useEffect(() => { setDiagEnabled(isDiagEnabled()); }, []);
 
   // Restaura a sessão salva
   useEffect(() => {
@@ -153,7 +158,7 @@ export default function HiveAuthProvider({
       {isLoginOpen && (
         <HiveLoginModal onLogin={login} onClose={closeLogin} />
       )}
-      <LoginDiagnostics />
+      {diagEnabled && <LoginDiagnostics />}
     </HiveAuthContext.Provider>
   );
 }
