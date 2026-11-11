@@ -1,139 +1,142 @@
 /*
- * Lista de exposições/exibições.
+ * Lista de exposições/exibições — visual herdado do wilbor.dashboard:
+ * texto escuro, título de cada entrada maior e sublinhado por uma régua fina.
  *
- * O markdown segue sempre o mesmo padrão por entrada:
+ * O markdown segue o padrão por entrada (a ordem título → data é garantida
+ * por normalizeExhibitionMarkdown):
  *
  *   ## Título da exposição
- *   07/05/2022            <- data: vira parágrafo ou h6 no markdown, e
- *                            Markdown.tsx marca os dois com .exhibition-date
- *   Descrição             <- uma ou mais linhas
+ *   07/05/2022            <- parágrafo ou h6; Markdown.tsx marca .exhibition-date
+ *   Descrição
  *   Local — Cidade, UF
  *
- * O ritmo abaixo agrupa esses três blocos e abre espaço entre uma entrada
- * e a seguinte, para a lista ser escaneável.
- *
- * Sobre os !important: Markdown.tsx aplica `style={{ color: '#888888' }}`
- * inline em todos os títulos e parágrafos. Sem !important, a regra inline
- * vence e a hierarquia de cor some.
+ * Por que @layer components: tailwind.css pinta todo `.markdown-content-custom`
+ * (h1..h6, p, li, *) de #888 com !important DENTRO de `@layer components`.
+ * No Tailwind 4 os layers são nativos, e um !important em layer vence
+ * qualquer !important fora de layer, seja qual for a especificidade — por
+ * isso o estilo desta lista nunca aparecia. Dentro do mesmo layer volta a
+ * valer a especificidade, e todo seletor aqui começa com
+ * `.markdown-content-custom.exhibition-content` (duas classes) para ganhar.
  */
 
-.exhibition-content {
-  font-size: 0.9rem !important;
-  line-height: 1.6 !important;
-}
+@layer components {
+  .markdown-content-custom.exhibition-content {
+    --ex-heading: #111827;
+    --ex-text: #1f2937;
+    --ex-muted: #6b7280;
+    --ex-rule: #e5e7eb;
+    --ex-rule-strong: #d1d5db;
 
-/* ---- Título da lista ---------------------------------------------- */
-
-.exhibition-content h1 {
-  font-size: 1.05rem !important;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  line-height: 1.3 !important;
-  margin: 0 0 1.5rem !important;
-  padding-bottom: 0.6rem;
-  border-bottom: 1px solid #e5e7eb;
-  color: #111827 !important;
-}
-
-.dark .exhibition-content h1 {
-  border-bottom-color: #262626;
-  color: #f5f5f5 !important;
-}
-
-/* ---- Cada exposição ------------------------------------------------ */
-
-/* A margem superior é o que separa visualmente uma entrada da outra. */
-.exhibition-content h2 {
-  font-size: 1rem !important;
-  font-weight: 700;
-  line-height: 1.3 !important;
-  margin: 1.85rem 0 0.2rem !important;
-  color: #111827 !important;
-}
-
-.dark .exhibition-content h2 {
-  color: #f5f5f5 !important;
-}
-
-/* A primeira entrada encosta no título da lista, sem respiro dobrado. */
-.exhibition-content h1 + h2,
-.exhibition-content h2:first-child {
-  margin-top: 0 !important;
-}
-
-/* Subdivisões eventuais dentro de uma entrada. */
-.exhibition-content h3,
-.exhibition-content h4,
-.exhibition-content h5,
-.exhibition-content h6 {
-  font-size: 0.92rem !important;
-  font-weight: 600;
-  line-height: 1.3 !important;
-  margin: 0.9rem 0 0.2rem !important;
-  color: #374151 !important;
-}
-
-.dark .exhibition-content h3,
-.dark .exhibition-content h4,
-.dark .exhibition-content h5,
-.dark .exhibition-content h6 {
-  color: #d4d4d4 !important;
-}
-
-/* ---- Data ----------------------------------------------------------
- * Legenda logo abaixo do título. O seletor precisa ser mais específico
- * que ".exhibition-content h6", senão as datas escritas como h6 herdam o
- * espaçamento de título e destoam das escritas como parágrafo.
- */
-
-.exhibition-content .exhibition-date {
-  font-size: 0.72rem !important;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  line-height: 1.2 !important;
-  margin: 0 0 0.6rem !important;
-  display: block;
-}
-
-.exhibition-content .exhibition-date,
-.exhibition-content .exhibition-date * {
-  color: #ef4444 !important;
-}
-
-.dark .exhibition-content .exhibition-date,
-.dark .exhibition-content .exhibition-date * {
-  color: #f87171 !important;
-}
-
-/* ---- Descrição ----------------------------------------------------- */
-
-.exhibition-content p {
-  margin: 0 0 0.25rem !important;
-  line-height: 1.6 !important;
-}
-
-.exhibition-content p:last-child {
-  margin-bottom: 0 !important;
-}
-
-.exhibition-content strong {
-  font-weight: 600;
-}
-
-/* ---- Telas maiores -------------------------------------------------- */
-
-@media (min-width: 640px) {
-  .exhibition-content {
     font-size: 0.95rem !important;
+    line-height: 1.65 !important;
   }
 
-  .exhibition-content h1 {
-    font-size: 1.1rem !important;
-    margin-bottom: 1.75rem !important;
+  .dark .markdown-content-custom.exhibition-content {
+    --ex-heading: #f3f4f6;
+    --ex-text: #d1d5db;
+    --ex-muted: #9ca3af;
+    --ex-rule: #374151;
+    --ex-rule-strong: #4b5563;
   }
 
-  .exhibition-content h2 {
-    font-size: 1.05rem !important;
-    margin-top: 2.1rem !important;
+  /* Texto corrido herda a cor da lista. */
+  .markdown-content-custom.exhibition-content,
+  .markdown-content-custom.exhibition-content p,
+  .markdown-content-custom.exhibition-content li,
+  .markdown-content-custom.exhibition-content span,
+  .markdown-content-custom.exhibition-content em,
+  .markdown-content-custom.exhibition-content a {
+    color: var(--ex-text) !important;
+  }
+
+  .markdown-content-custom.exhibition-content strong {
+    color: var(--ex-heading) !important;
+    font-weight: 600;
+  }
+
+  /* ---- Título da lista (EXPOSIÇÕES / EXIBIÇÕES, PUBLICAÇÕES) ---------- */
+
+  .markdown-content-custom.exhibition-content h1 {
+    font-size: 1.5rem !important;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    line-height: 1.25 !important;
+    margin: 3rem 0 1.25rem !important;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--ex-rule-strong);
+    color: var(--ex-heading) !important;
+  }
+
+  .markdown-content-custom.exhibition-content > div:first-child h1:first-child {
+    margin-top: 0 !important;
+  }
+
+  /* ---- Cada exposição ------------------------------------------------- */
+
+  .markdown-content-custom.exhibition-content h2 {
+    font-size: 1.2rem !important;
+    font-weight: 700;
+    line-height: 1.3 !important;
+    margin: 2.25rem 0 0.6rem !important;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid var(--ex-rule);
+    color: var(--ex-heading) !important;
+  }
+
+  .markdown-content-custom.exhibition-content h1 + h2 {
+    margin-top: 0 !important;
+  }
+
+  .markdown-content-custom.exhibition-content h3,
+  .markdown-content-custom.exhibition-content h4,
+  .markdown-content-custom.exhibition-content h5,
+  .markdown-content-custom.exhibition-content h6 {
+    font-size: 1rem !important;
+    font-weight: 600;
+    line-height: 1.3 !important;
+    margin: 1rem 0 0.3rem !important;
+    color: var(--ex-heading) !important;
+  }
+
+  /* ---- Data -----------------------------------------------------------
+   * Linha discreta logo abaixo do título. Mais específica que a regra de
+   * h3–h6 acima, para datas escritas como `######` ficarem iguais às
+   * escritas como parágrafo.
+   */
+
+  .markdown-content-custom.exhibition-content .exhibition-date,
+  .markdown-content-custom.exhibition-content .exhibition-date * {
+    font-size: 0.85rem !important;
+    font-weight: 400 !important; /* vence o font-semibold do h6 (layer utilities) */
+    letter-spacing: 0.04em;
+    line-height: 1.3 !important;
+    color: var(--ex-muted) !important;
+  }
+
+  .markdown-content-custom.exhibition-content .exhibition-date {
+    display: block;
+    margin: 0 0 0.5rem !important;
+  }
+
+  /* ---- Descrição ------------------------------------------------------ */
+
+  .markdown-content-custom.exhibition-content p {
+    margin: 0 0 0.2rem !important;
+  }
+
+  /* ---- Telas maiores --------------------------------------------------- */
+
+  @media (min-width: 640px) {
+    .markdown-content-custom.exhibition-content {
+      font-size: 1rem !important;
+    }
+
+    .markdown-content-custom.exhibition-content h1 {
+      font-size: 1.75rem !important;
+    }
+
+    .markdown-content-custom.exhibition-content h2 {
+      font-size: 1.35rem !important;
+    }
   }
 }

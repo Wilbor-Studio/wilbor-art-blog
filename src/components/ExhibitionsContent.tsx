@@ -3,6 +3,7 @@
 import { getPostsByBlog, getUserAccount } from "@/../lib/hive/hive-client";
 import EditPostButton, { SECTION_EDIT_CLASS } from '@/admin/EditPostButton';
 import Markdown from "@/components/Markdown";
+import { normalizeExhibitionMarkdown } from '@/utility/exhibition-markdown';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { A11y, Navigation, Pagination, Scrollbar } from 'swiper/modules';
@@ -194,7 +195,7 @@ export default function ExhibitionsContent() {
                     </div>
                   )}
                   <Markdown className="exhibition-content" removeMedia>
-                    {post.body}
+                    {normalizeExhibitionMarkdown(post.body)}
                   </Markdown>
                   {index < hivePosts.length - 1 && (
                     <hr className="border-t border-gray-200 dark:border-gray-700 my-4" />
