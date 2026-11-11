@@ -3,7 +3,7 @@
 import { PATH_GRID } from '@/app/paths';
 import { useHiveAuth } from '@/admin/HiveAuthProvider';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 /**
  * Atalho de login. Substitui o projeto wilbor.dashboard: abre o modal de
@@ -13,12 +13,16 @@ import { useEffect } from 'react';
 export default function DashboardPage() {
   const { isAdmin, isReady, isLoginOpen, openLogin } = useHiveAuth();
   const router = useRouter();
+  // Abre o modal sozinho só na primeira vez. Antes, fechar o modal disparava
+  // o efeito de novo e ele reabria na hora — não dava para sair dele.
+  const autoOpened = useRef(false);
 
   useEffect(() => {
     if (!isReady) return;
     if (isAdmin) {
       router.replace(PATH_GRID);
-    } else if (!isLoginOpen) {
+    } else if (!isLoginOpen && !autoOpened.current) {
+      autoOpened.current = true;
       openLogin();
     }
   }, [isAdmin, isReady, isLoginOpen, openLogin, router]);

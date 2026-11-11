@@ -77,6 +77,17 @@ export async function hiveServerLoginWithPassword(
   if (!privateKey) {
     return { validation: { success: false, message: 'Informe a chave privada.' } };
   }
+  // Sem o segredo, cifrar a chave falha dentro dos try/catch abaixo e o
+  // artista recebia "Credenciais inválidas" mesmo com a chave certa.
+  if (!process.env.CRYPTO_SECRET && !process.env.NEXT_PUBLIC_CRYPTO_SECRET) {
+    console.error('CRYPTO_SECRET ausente: login por chave privada indisponível.');
+    return {
+      validation: {
+        success: false,
+        message: 'Login por chave indisponível: servidor sem CRYPTO_SECRET configurado.',
+      },
+    };
+  }
 
   try {
     // Primeiro tenta como uma senha master

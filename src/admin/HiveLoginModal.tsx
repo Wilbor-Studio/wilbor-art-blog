@@ -32,6 +32,18 @@ export default function HiveLoginModal({
   const [privateKeyLoading, setPrivateKeyLoading] = useState(false);
 
   const anyLoading = keychainLoading || privateKeyLoading;
+
+  /**
+   * O fluido em WebGL fica de fora em telas de toque. No iPad, abrir o teclado
+   * redimensiona a viewport e o efeito recria os framebuffers a cada quadro —
+   * a memória de GPU estoura e o Safari recarrega a página, fechando o login.
+   */
+  const [showFluid, setShowFluid] = useState(false);
+  useEffect(() => {
+    const isTouch = window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setShowFluid(!isTouch && !reducedMotion);
+  }, []);
   const clearError = () => { if (error) setError(''); };
 
   // Trava o scroll do site enquanto o modal está aberto
@@ -65,14 +77,21 @@ export default function HiveLoginModal({
     return true;
   }
 
+  // Teclado do iPad pode inserir espaço depois do ponto ("wilbor. art").
+  const normalizedUsername = () => username.replace(/\s+/g, '').replace(/^@/, '').toLowerCase();
+
   const handleKeychainLogin = () => {
     setError('');
-    const candidate = username.trim().toLowerCase();
+    const candidate = normalizedUsername();
     if (!checkIsSiteOwner(candidate)) return;
 
     const win = window as HiveKeychainWindow;
     if (!win.hive_keychain) {
-      setError('Hive Keychain não está instalado neste navegador.');
+      setError(
+        navigator.maxTouchPoints > 0
+          ? 'No iPad/celular o Keychain só funciona dentro do navegador do app Hive Keychain. Ou entre com a chave privada abaixo.'
+          : 'Hive Keychain não está instalado neste navegador.',
+      );
       return;
     }
 
@@ -94,16 +113,18 @@ export default function HiveLoginModal({
 
   const handlePrivateKeyLogin = async () => {
     setError('');
-    const candidate = username.trim().toLowerCase();
+    const candidate = normalizedUsername();
     if (!checkIsSiteOwner(candidate)) return;
-    if (!privateKey) {
+    // Colar das Notas no iPad costuma trazer espaço ou quebra de linha junto.
+    const key = privateKey.trim();
+    if (!key) {
       setError('Informe a chave privada.');
       return;
     }
 
     setPrivateKeyLoading(true);
     try {
-      const result = await hiveServerLoginWithPassword(candidate, privateKey);
+      const result = await hiveServerLoginWithPassword(candidate, key);
       if (result.validation.success && result.key) {
         onLogin(candidate, 'private', result.key);
       } else {
@@ -132,15 +153,17 @@ export default function HiveLoginModal({
       `}</style>
 
       {/* Simulação de fluido — z-50, pointer-events: none */}
-      <SplashCursor
-        DENSITY_DISSIPATION={4}
-        VELOCITY_DISSIPATION={2.5}
-        SPLAT_RADIUS={0.18}
-        CURL={4}
-        RAINBOW_MODE={true}
-        TRANSPARENT={true}
-        BACK_COLOR={{ r: 0, g: 0, b: 0 }}
-      />
+      {showFluid && (
+        <SplashCursor
+          DENSITY_DISSIPATION={4}
+          VELOCITY_DISSIPATION={2.5}
+          SPLAT_RADIUS={0.18}
+          CURL={4}
+          RAINBOW_MODE={true}
+          TRANSPARENT={true}
+          BACK_COLOR={{ r: 0, g: 0, b: 0 }}
+        />
+      )}
 
       <div
         className="wilbor-admin fixed inset-0 z-[51] flex items-center justify-center bg-black/70 backdrop-blur-[2px] p-4"
@@ -228,7 +251,7 @@ export default function HiveLoginModal({
                   </label>
                   <input
                     id="hive-username"
-                    className="w-full px-3 py-2.5 rounded-lg bg-zinc-900 text-white text-sm font-mono
+                    className="w-full px-3 py-2.5 rounded-lg bg-zinc-900 text-white text-[16px] font-mono
                                border border-zinc-800 placeholder:text-zinc-500
                                focus:outline-none focus:ring-1 focus:ring-zinc-600 focus:border-zinc-600
                                transition disabled:opacity-40"
@@ -237,6 +260,10 @@ export default function HiveLoginModal({
                     onChange={e => { setUsername(e.target.value); clearError(); }}
                     disabled={anyLoading}
                     autoComplete="username"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    inputMode="email"
                   />
                 </div>
 
@@ -273,7 +300,7 @@ export default function HiveLoginModal({
                   </label>
                   <input
                     id="hive-posting-key"
-                    className="w-full px-3 py-2.5 rounded-lg bg-zinc-900 text-white text-sm font-mono
+                    className="w-full px-3 py-2.5 rounded-lg bg-zinc-900 text-white text-[16px] font-mono
                                border border-zinc-800 placeholder:text-zinc-500
                                focus:outline-none focus:ring-1 focus:ring-zinc-600 focus:border-zinc-600
                                transition disabled:opacity-40"
@@ -283,6 +310,9 @@ export default function HiveLoginModal({
                     onChange={e => { setPrivateKey(e.target.value); clearError(); }}
                     disabled={anyLoading}
                     autoComplete="current-password"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
                   />
                 </div>
 
@@ -292,7 +322,7 @@ export default function HiveLoginModal({
                              text-sm font-semibold font-mono transition
                              disabled:opacity-40 disabled:cursor-not-allowed"
                   onClick={handlePrivateKeyLogin}
-                  disabled={anyLoading || !username.trim() || !privateKey}
+                  disabled={anyLoading || !username.trim() || !privateKey.trim()}
                 >
                   {privateKeyLoading ? (
                     <span className="inline-block w-4 h-4 border-2 border-zinc-400 border-t-zinc-900 rounded-full animate-spin" />
