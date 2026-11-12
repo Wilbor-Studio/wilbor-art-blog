@@ -24,7 +24,6 @@
     --ex-heading: #111827;
     --ex-text: #1f2937;
     --ex-muted: #6b7280;
-    --ex-rule: #e5e7eb;
     --ex-rule-strong: #d1d5db;
 
     font-size: 0.95rem !important;
@@ -35,7 +34,6 @@
     --ex-heading: #f3f4f6;
     --ex-text: #d1d5db;
     --ex-muted: #9ca3af;
-    --ex-rule: #374151;
     --ex-rule-strong: #4b5563;
   }
 
@@ -78,12 +76,12 @@
     font-weight: 700;
     line-height: 1.3 !important;
     margin: 2.25rem 0 0.6rem !important;
-    padding-bottom: 0.3rem;
-    border-bottom: 1px solid var(--ex-rule);
     color: var(--ex-heading) !important;
   }
 
-  .markdown-content-custom.exhibition-content h1 + h2 {
+  .markdown-content-custom.exhibition-content h1 + h2,
+  /* primeiro item dentro de um acordeão (ex.: Publicações) */
+  .markdown-content-custom.exhibition-content > div:first-child h2:first-child {
     margin-top: 0 !important;
   }
 

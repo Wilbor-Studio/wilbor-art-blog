@@ -6,8 +6,7 @@ import { useId, useState } from 'react';
  * Bloco recolhível: mostra só o rótulo e expande o conteúdo quando a pessoa
  * clica. Usado para não despejar textos e listas longas de uma vez na página.
  *
- * O selo (`badge`) é opcional — na seção "sobre" ele marca o texto que vem do
- * Hive; nas subseções de parceiros não é usado.
+ * O selo (`badge`) é opcional e hoje não é usado em nenhuma seção.
  */
 export default function CollapsibleSection({
   children,
@@ -15,6 +14,7 @@ export default function CollapsibleSection({
   labelOpen = 'mostrar menos',
   badge,
   count,
+  size = 'default',
 }: {
   children: React.ReactNode
   label: string
@@ -22,12 +22,14 @@ export default function CollapsibleSection({
   badge?: string
   /** Quantidade de itens escondidos, exibida à direita do rótulo. */
   count?: number
+  /** 'title' usa o tamanho dos títulos de seção; 'default' é o rótulo menor. */
+  size?: 'default' | 'title'
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const contentId = useId();
 
   return (
-    <div className="border-t border-neutral-200 dark:border-neutral-800">
+    <div>
       <button
         type="button"
         onClick={() => setIsOpen(open => !open)}
@@ -60,8 +62,11 @@ export default function CollapsibleSection({
 
         <span
           className={[
-            'text-sm sm:text-base uppercase tracking-wide',
-            'font-medium',
+            'uppercase',
+            size === 'title'
+              // Mesmo tamanho dos títulos de seção (ex.: "Exposições").
+              ? 'text-2xl font-extrabold tracking-[0.02em] leading-tight text-gray-900 dark:text-gray-100'
+              : 'text-sm sm:text-base font-medium tracking-wide',
           ].join(' ')}
         >
           {isOpen ? labelOpen : label}

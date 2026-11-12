@@ -41,3 +41,31 @@ export function normalizeExhibitionMarkdown(markdown: string): string {
 
   return out.join('\n');
 }
+
+export interface ExhibitionSection {
+  /** Texto do `# título`; null para o que vier antes do primeiro `#`. */
+  title: string | null;
+  body: string;
+}
+
+/**
+ * Separa o post nos títulos de nível 1 (`# EXPOSIÇÕES / EXIBIÇÕES`,
+ * `# PUBLICAÇÕES`). Cada um vira um bloco à parte, mostrado como acordeão.
+ */
+export function splitExhibitionSections(markdown: string): ExhibitionSection[] {
+  const sections: ExhibitionSection[] = [{ title: null, body: '' }];
+  const bodies: string[][] = [[]];
+
+  for (const line of markdown.replace(/\r\n/g, '\n').split('\n')) {
+    const h1 = line.match(/^#\s+(.+?)\s*#*\s*$/);
+    if (h1) {
+      sections.push({ title: h1[1], body: '' });
+      bodies.push([]);
+      continue;
+    }
+    bodies[bodies.length - 1].push(line);
+  }
+
+  sections.forEach((section, i) => { section.body = bodies[i].join('\n').trim(); });
+  return sections.filter(section => section.title !== null || section.body);
+}

@@ -3,7 +3,8 @@
 import { getPostsByBlog, getUserAccount } from "@/../lib/hive/hive-client";
 import EditPostButton, { SECTION_EDIT_CLASS } from '@/admin/EditPostButton';
 import Markdown from "@/components/Markdown";
-import { normalizeExhibitionMarkdown } from '@/utility/exhibition-markdown';
+import CollapsibleSection from '@/components/CollapsibleSection';
+import { normalizeExhibitionMarkdown, splitExhibitionSections } from '@/utility/exhibition-markdown';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { A11y, Navigation, Pagination, Scrollbar } from 'swiper/modules';
@@ -123,13 +124,13 @@ export default function ExhibitionsContent() {
   }
 
   return (
-    <div className="w-full px-2 sm:px-8 pt-2 md:px-12 py-6 sm:py-8 dark:text-gray-200 text-left">
-      <div className="max-w-full sm:max-w-4xl w-full text-left space-y-4 sm:space-y-3 mx-0">
+    <div className="w-full px-4 sm:px-8 md:px-12 py-6 sm:py-8 dark:text-gray-200 text-left">
+      <div className="w-full max-w-4xl mx-auto text-left space-y-4 sm:space-y-3">
         <div className="space-y-3">
           {hivePosts.map((post, index) => {
             const media = extractMediaFromPost(post);
             return (
-              <article key={post.permlink} className="mb-4 sm:mb-6 p-2 sm:p-3">
+              <article key={post.permlink} className="mb-4 sm:mb-6 py-2 sm:py-3">
                 <div className="space-y-1 sm:space-y-0">
                   <EditPostButton
                     post={post}
@@ -194,9 +195,26 @@ export default function ExhibitionsContent() {
                       ))}
                     </div>
                   )}
-                  <Markdown className="exhibition-content" removeMedia>
-                    {normalizeExhibitionMarkdown(post.body)}
-                  </Markdown>
+                  {/* Cada "# título" do post (Exposições, Publicações) vira
+                      acordeão; texto antes do primeiro # fica sempre aberto. */}
+                  {splitExhibitionSections(normalizeExhibitionMarkdown(post.body)).map((section, sectionIndex) =>
+                    section.title === null ? (
+                      <Markdown key={sectionIndex} className="exhibition-content" removeMedia>
+                        {section.body}
+                      </Markdown>
+                    ) : (
+                      <CollapsibleSection
+                        key={sectionIndex}
+                        size="title"
+                        label={section.title}
+                        labelOpen={section.title}
+                      >
+                        <Markdown className="exhibition-content" removeMedia>
+                          {section.body}
+                        </Markdown>
+                      </CollapsibleSection>
+                    )
+                  )}
                   {index < hivePosts.length - 1 && (
                     <hr className="border-t border-gray-200 dark:border-gray-700 my-4" />
                   )}
