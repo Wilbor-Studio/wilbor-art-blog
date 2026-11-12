@@ -130,7 +130,7 @@ function PartnerSections({ body }: { body: string }) {
   }
 
   return (
-    <div className="border-b border-neutral-200 dark:border-neutral-800">
+    <div>
       {sections.map(section => (
         <CollapsibleSection
           key={section.title}
@@ -158,16 +158,16 @@ export default function PartnersContent() {
   const { posts: hivePosts, loading, error } = useDynamicPartnersPost(process.env.NEXT_PUBLIC_HIVE_USERNAME || '');
 
   return (
-      <div className="w-full flex justify-center px-4 sm:px-12 md:px-16 lg:px-20 pt-2 py-8 dark:text-gray-200 text-left">
-        <div className="w-full max-w-5xl text-left space-y-2 sm:space-y-3 mx-auto">
+      <div className="w-full px-4 sm:px-8 md:px-12 py-6 sm:py-8 dark:text-gray-200 text-left">
+        <div className="w-full max-w-4xl mx-auto text-left space-y-2 sm:space-y-3">
           {/* Título da seção: o post do Hive começa direto na primeira
               categoria, sem dizer de que parte do site se trata. */}
           <h2
             className={[
-              'font-mono text-xs sm:text-sm uppercase tracking-[0.18em]',
-              'text-neutral-500 dark:text-neutral-400',
+              // Mesmo tamanho dos outros títulos de seção (Sobre, Exposições).
+              'font-mono text-2xl font-extrabold uppercase tracking-[0.02em] leading-tight',
+              'text-gray-900 dark:text-gray-100',
               'pb-2 mb-4 sm:mb-6',
-              'border-b border-neutral-200 dark:border-neutral-800',
             ].join(' ')}
           >
             {siteConfig.sectionTitles.partners}
@@ -177,7 +177,7 @@ export default function PartnersContent() {
               {hivePosts.map((post, index) => {
                 const media = extractMediaFromPost(post);
                 return (
-                  <article key={post.permlink} className="mb-6 p-3">
+                  <article key={post.permlink} className="mb-6 py-3">
                     <div className="space-y-0">
                       <EditPostButton
                         post={post}
