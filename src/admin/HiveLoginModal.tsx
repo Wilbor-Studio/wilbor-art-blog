@@ -6,17 +6,8 @@ import { hiveServerLoginWithPassword } from '../../lib/hive/server-functions';
 import type { HiveAuthMethod } from './HiveAuthProvider';
 import { SITE_HIVE_USERNAME } from './HiveAuthProvider';
 import SplashCursor from './SplashCursor';
-
-interface HiveKeychainWindow extends Window {
-  hive_keychain?: {
-    requestSignBuffer: (
-      username: string,
-      message: string,
-      keyType: string,
-      callback: (res: { success: boolean; message?: string }) => void,
-    ) => void;
-  };
-}
+import { diag } from './diagnostics';
+import { getKeychain, KeychainTimeoutError, keychainErrorMessage, keychainSignBuffer } from './keychain';
 
 export default function HiveLoginModal({
   onLogin,
@@ -32,6 +23,18 @@ export default function HiveLoginModal({
   const [privateKeyLoading, setPrivateKeyLoading] = useState(false);
 
   const anyLoading = keychainLoading || privateKeyLoading;
+
+  /**
+   * O fluido em WebGL fica de fora em telas de toque. No iPad, abrir o teclado
+   * redimensiona a viewport e o efeito recria os framebuffers a cada quadro —
+   * a memória de GPU estoura e o Safari recarrega a página, fechando o login.
+   */
+  const [showFluid, setShowFluid] = useState(false);
+  useEffect(() => {
+    const isTouch = window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setShowFluid(!isTouch && !reducedMotion);
+  }, []);
   const clearError = () => { if (error) setError(''); };
 
   // Trava o scroll do site enquanto o modal está aberto
@@ -54,6 +57,7 @@ export default function HiveLoginModal({
    * edição que a blockchain recusaria mais tarde.
    */
   function checkIsSiteOwner(candidate: string) {
+    diag('login.checa-dono', { digitado: username, normalizado: candidate, esperado: SITE_HIVE_USERNAME });
     if (!SITE_HIVE_USERNAME) {
       setError('Site sem NEXT_PUBLIC_HIVE_USERNAME configurado.');
       return false;
@@ -65,51 +69,65 @@ export default function HiveLoginModal({
     return true;
   }
 
-  const handleKeychainLogin = () => {
+  // Teclado do iPad pode inserir espaço depois do ponto ("wilbor. art").
+  const normalizedUsername = () => username.replace(/\s+/g, '').replace(/^@/, '').toLowerCase();
+
+  const handleKeychainLogin = async () => {
     setError('');
-    const candidate = username.trim().toLowerCase();
+    const candidate = normalizedUsername();
     if (!checkIsSiteOwner(candidate)) return;
 
-    const win = window as HiveKeychainWindow;
-    if (!win.hive_keychain) {
-      setError('Hive Keychain não está instalado neste navegador.');
+    if (!getKeychain()) {
+      diag('login.keychain.ausente');
+      setError(
+        navigator.maxTouchPoints > 0
+          ? 'No iPad/celular o Keychain só funciona dentro do navegador do app Hive Keychain. Ou entre com a chave privada abaixo.'
+          : 'Hive Keychain não está instalado neste navegador.',
+      );
       return;
     }
 
     setKeychainLoading(true);
-    win.hive_keychain.requestSignBuffer(
-      candidate,
-      'login-wilbor.art',
-      'Posting',
-      (res) => {
-        setKeychainLoading(false);
-        if (res.success) {
-          onLogin(candidate, 'keychain');
-        } else {
-          setError(res.message || 'Falha ao autenticar com Hive Keychain.');
-        }
-      },
-    );
+    try {
+      const res = await keychainSignBuffer(candidate, 'login-wilbor.art');
+      if (res.success) {
+        diag('login.keychain.ok');
+        onLogin(candidate, 'keychain');
+      } else {
+        setError(keychainErrorMessage(res, 'Falha ao autenticar com Hive Keychain.'));
+      }
+    } catch (err) {
+      setError(err instanceof KeychainTimeoutError
+        ? `${err.message} Feche e abra o app Keychain e tente de novo, ou use a chave privada.`
+        : `Erro no Hive Keychain: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setKeychainLoading(false);
+    }
   };
 
   const handlePrivateKeyLogin = async () => {
     setError('');
-    const candidate = username.trim().toLowerCase();
+    const candidate = normalizedUsername();
     if (!checkIsSiteOwner(candidate)) return;
-    if (!privateKey) {
+    // Colar das Notas no iPad costuma trazer espaço ou quebra de linha junto.
+    const key = privateKey.trim();
+    if (!key) {
       setError('Informe a chave privada.');
       return;
     }
 
     setPrivateKeyLoading(true);
+    diag('login.chave.pedido', { tamanhoChave: key.length, colouEspacos: key.length !== privateKey.length });
     try {
-      const result = await hiveServerLoginWithPassword(candidate, privateKey);
+      const result = await hiveServerLoginWithPassword(candidate, key);
+      diag('login.chave.resposta', { success: result.validation.success, message: result.validation.message, type: result.type });
       if (result.validation.success && result.key) {
         onLogin(candidate, 'private', result.key);
       } else {
         setError(result.validation.message || 'Falha na autenticação.');
       }
-    } catch {
+    } catch (err) {
+      diag('login.chave.erro-servidor', err);
       setError('Erro ao conectar com o servidor.');
     } finally {
       setPrivateKeyLoading(false);
@@ -132,15 +150,17 @@ export default function HiveLoginModal({
       `}</style>
 
       {/* Simulação de fluido — z-50, pointer-events: none */}
-      <SplashCursor
-        DENSITY_DISSIPATION={4}
-        VELOCITY_DISSIPATION={2.5}
-        SPLAT_RADIUS={0.18}
-        CURL={4}
-        RAINBOW_MODE={true}
-        TRANSPARENT={true}
-        BACK_COLOR={{ r: 0, g: 0, b: 0 }}
-      />
+      {showFluid && (
+        <SplashCursor
+          DENSITY_DISSIPATION={4}
+          VELOCITY_DISSIPATION={2.5}
+          SPLAT_RADIUS={0.18}
+          CURL={4}
+          RAINBOW_MODE={true}
+          TRANSPARENT={true}
+          BACK_COLOR={{ r: 0, g: 0, b: 0 }}
+        />
+      )}
 
       <div
         className="wilbor-admin fixed inset-0 z-[51] flex items-center justify-center bg-black/70 backdrop-blur-[2px] p-4"
@@ -228,7 +248,7 @@ export default function HiveLoginModal({
                   </label>
                   <input
                     id="hive-username"
-                    className="w-full px-3 py-2.5 rounded-lg bg-zinc-900 text-white text-sm font-mono
+                    className="w-full px-3 py-2.5 rounded-lg bg-zinc-900 text-white text-[16px] font-mono
                                border border-zinc-800 placeholder:text-zinc-500
                                focus:outline-none focus:ring-1 focus:ring-zinc-600 focus:border-zinc-600
                                transition disabled:opacity-40"
@@ -237,6 +257,10 @@ export default function HiveLoginModal({
                     onChange={e => { setUsername(e.target.value); clearError(); }}
                     disabled={anyLoading}
                     autoComplete="username"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    inputMode="email"
                   />
                 </div>
 
@@ -273,7 +297,7 @@ export default function HiveLoginModal({
                   </label>
                   <input
                     id="hive-posting-key"
-                    className="w-full px-3 py-2.5 rounded-lg bg-zinc-900 text-white text-sm font-mono
+                    className="w-full px-3 py-2.5 rounded-lg bg-zinc-900 text-white text-[16px] font-mono
                                border border-zinc-800 placeholder:text-zinc-500
                                focus:outline-none focus:ring-1 focus:ring-zinc-600 focus:border-zinc-600
                                transition disabled:opacity-40"
@@ -283,6 +307,9 @@ export default function HiveLoginModal({
                     onChange={e => { setPrivateKey(e.target.value); clearError(); }}
                     disabled={anyLoading}
                     autoComplete="current-password"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
                   />
                 </div>
 
@@ -292,7 +319,7 @@ export default function HiveLoginModal({
                              text-sm font-semibold font-mono transition
                              disabled:opacity-40 disabled:cursor-not-allowed"
                   onClick={handlePrivateKeyLogin}
-                  disabled={anyLoading || !username.trim() || !privateKey}
+                  disabled={anyLoading || !username.trim() || !privateKey.trim()}
                 >
                   {privateKeyLoading ? (
                     <span className="inline-block w-4 h-4 border-2 border-zinc-400 border-t-zinc-900 rounded-full animate-spin" />
