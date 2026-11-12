@@ -164,8 +164,9 @@ export default function PartnersContent() {
               categoria, sem dizer de que parte do site se trata. */}
           <h2
             className={[
-              'font-mono text-xs sm:text-sm uppercase tracking-[0.18em]',
-              'text-neutral-500 dark:text-neutral-400',
+              // Mesmo tamanho dos outros títulos de seção (Sobre, Exposições).
+              'font-mono text-2xl font-extrabold uppercase tracking-[0.02em] leading-tight',
+              'text-gray-900 dark:text-gray-100',
               'pb-2 mb-4 sm:mb-6',
             ].join(' ')}
           >
