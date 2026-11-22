@@ -11,11 +11,18 @@ import {
 import dynamic from 'next/dynamic';
 import HiveLoginModal from './HiveLoginModal';
 import { diag, isDiagEnabled } from './diagnostics';
+import HiveAuthPendingNotice from './HiveAuthPendingNotice';
+import { clearHiveAuthSession, loadHiveAuthSession } from './hiveauth-session';
 
 // Só baixado com ?debug=1 — visitantes não carregam o painel.
 const LoginDiagnostics = dynamic(() => import('./LoginDiagnostics'), { ssr: false });
 
-export type HiveAuthMethod = 'keychain' | 'private';
+/**
+ * keychain: extensão no computador (ou navegador do app Keychain);
+ * private: chave de posting cifrada pelo servidor;
+ * hiveauth: app Keychain no iPhone/iPad via HiveAuth (sessão em hiveauth.ts).
+ */
+export type HiveAuthMethod = 'keychain' | 'private' | 'hiveauth';
 
 const STORAGE_LOGGED_IN = 'wilbor_admin_logged_in';
 const STORAGE_USERNAME = 'wilbor_admin_username';
@@ -70,7 +77,15 @@ export default function HiveAuthProvider({
     try {
       const storedLoggedIn = localStorage.getItem(STORAGE_LOGGED_IN);
       const storedUsername = localStorage.getItem(STORAGE_USERNAME);
-      if (storedLoggedIn === 'true' && storedUsername) {
+      const storedMethod = localStorage.getItem(STORAGE_METHOD);
+      // Sessão do HiveAuth vencida no app: publicar falharia, então pede login de novo.
+      const hiveAuthExpired = storedMethod === 'hiveauth' && !loadHiveAuthSession(storedUsername);
+      if (hiveAuthExpired) {
+        diag('sessao.hiveauth-expirada');
+        localStorage.removeItem(STORAGE_LOGGED_IN);
+        clearHiveAuthSession();
+      }
+      if (storedLoggedIn === 'true' && storedUsername && !hiveAuthExpired) {
         setUsername(storedUsername);
         setPostingKey(localStorage.getItem(STORAGE_POSTING_KEY));
         setAuthMethod(localStorage.getItem(STORAGE_METHOD) as HiveAuthMethod | null);
@@ -103,6 +118,8 @@ export default function HiveAuthProvider({
       localStorage.setItem(STORAGE_LOGGED_IN, 'true');
       localStorage.setItem(STORAGE_USERNAME, nextUsername);
       localStorage.setItem(STORAGE_METHOD, method);
+      // A sessão do HiveAuth é salva pelo modal antes de chamar login().
+      if (method !== 'hiveauth') clearHiveAuthSession();
       if (method === 'private' && key) {
         localStorage.setItem(STORAGE_POSTING_KEY, key);
       } else {
@@ -126,6 +143,7 @@ export default function HiveAuthProvider({
       localStorage.removeItem(STORAGE_USERNAME);
       localStorage.removeItem(STORAGE_POSTING_KEY);
       localStorage.removeItem(STORAGE_METHOD);
+      clearHiveAuthSession();
     } catch {
       // nada a limpar
     }
@@ -158,6 +176,7 @@ export default function HiveAuthProvider({
       {isLoginOpen && (
         <HiveLoginModal onLogin={login} onClose={closeLogin} />
       )}
+      <HiveAuthPendingNotice />
       {diagEnabled && <LoginDiagnostics />}
     </HiveAuthContext.Provider>
   );

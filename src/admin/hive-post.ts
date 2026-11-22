@@ -1,6 +1,7 @@
 import type { Operation } from '@hiveio/dhive';
 import { sendHiveOperation } from '../../lib/hive/server-functions';
 import { diag } from './diagnostics';
+import { HiveAuthTimeoutError, loadHiveAuthSession } from './hiveauth-session';
 import { getKeychain, KeychainTimeoutError, keychainBroadcast, keychainErrorMessage } from './keychain';
 
 export const PINATA_GATEWAY = 'https://ipfs.skatehive.app/ipfs';
@@ -118,8 +119,9 @@ export function mediaToMarkdown(entries: { url: string; isVideo: boolean }[]) {
 }
 
 /**
- * Publica as operações no Hive: usa o Keychain quando disponível e a sessão não
- * guarda chave; caso contrário assina no servidor com a chave cifrada.
+ * Publica as operações no Hive: usa a extensão Keychain quando disponível e a
+ * sessão não guarda chave; com chave, assina no servidor; no iPhone/iPad
+ * (sem extensão) pede a assinatura ao app Keychain pelo HiveAuth.
  */
 export async function broadcastOperations(
   username: string,
@@ -127,9 +129,12 @@ export async function broadcastOperations(
   postingKey?: string | null,
 ) {
   const keychain = getKeychain();
+  const hiveAuthSession = !keychain && !postingKey ? loadHiveAuthSession(username) : null;
   diag('publicar.inicio', {
     username,
-    via: keychain && !postingKey ? 'keychain' : postingKey ? 'servidor' : 'nenhum',
+    via: keychain && !postingKey ? 'keychain'
+      : postingKey ? 'servidor'
+        : hiveAuthSession ? 'hiveauth' : 'nenhum',
     operacoes: operations.map(operation => operation[0]),
   });
 
@@ -161,7 +166,24 @@ export async function broadcastOperations(
     return;
   }
 
-  throw new Error('Sessão sem chave de posting e sem Hive Keychain disponível.');
+  if (hiveAuthSession) {
+    try {
+      // Sob demanda: dhive + crypto-js só baixam para quem publica pelo app.
+      const { hiveAuthBroadcast } = await import('./hiveauth');
+      await hiveAuthBroadcast(hiveAuthSession, operations);
+      diag('publicar.hiveauth.ok');
+    } catch (error) {
+      diag('publicar.hiveauth.erro', error);
+      if (error instanceof HiveAuthTimeoutError) {
+        // A operação pode ter sido assinada mesmo assim: evitar post duplicado.
+        throw new Error(`${error.message} Confira no Hive se a alteração entrou antes de tentar de novo.`);
+      }
+      throw error;
+    }
+    return;
+  }
+
+  throw new Error('Sessão expirada ou sem Hive Keychain disponível. Saia e entre de novo.');
 }
 
 /**
