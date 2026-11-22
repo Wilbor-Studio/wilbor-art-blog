@@ -1,13 +1,19 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { hiveServerLoginWithPassword } from '../../lib/hive/server-functions';
 import type { HiveAuthMethod } from './HiveAuthProvider';
 import { SITE_HIVE_USERNAME } from './HiveAuthProvider';
 import SplashCursor from './SplashCursor';
 import { diag } from './diagnostics';
 import { getKeychain, KeychainTimeoutError, keychainErrorMessage, keychainSignBuffer } from './keychain';
+import {
+  HiveAuthRejectedError,
+  HiveAuthTimeoutError,
+  isMobileKeychainDevice,
+  saveHiveAuthSession,
+} from './hiveauth-session';
 
 export default function HiveLoginModal({
   onLogin,
@@ -21,6 +27,10 @@ export default function HiveLoginModal({
   const [error, setError] = useState('');
   const [keychainLoading, setKeychainLoading] = useState(false);
   const [privateKeyLoading, setPrivateKeyLoading] = useState(false);
+  /** Link has:// do pedido de login pendente no app (iPhone/iPad). */
+  const [hiveAuthLink, setHiveAuthLink] = useState<string | null>(null);
+  /** Incrementa a cada tentativa: resposta de tentativa cancelada é ignorada. */
+  const hiveAuthAttempt = useRef(0);
 
   const anyLoading = keychainLoading || privateKeyLoading;
 
@@ -78,12 +88,13 @@ export default function HiveLoginModal({
     if (!checkIsSiteOwner(candidate)) return;
 
     if (!getKeychain()) {
+      // Safari/Chrome do iPhone e iPad não recebem o Keychain: vai pelo app via HiveAuth.
+      if (isMobileKeychainDevice()) {
+        await handleHiveAuthLogin(candidate);
+        return;
+      }
       diag('login.keychain.ausente');
-      setError(
-        navigator.maxTouchPoints > 0
-          ? 'No iPad/celular o Keychain só funciona dentro do navegador do app Hive Keychain. Ou entre com a chave privada abaixo.'
-          : 'Hive Keychain não está instalado neste navegador.',
-      );
+      setError('Hive Keychain não está instalado neste navegador.');
       return;
     }
 
@@ -103,6 +114,46 @@ export default function HiveLoginModal({
     } finally {
       setKeychainLoading(false);
     }
+  };
+
+  const handleHiveAuthLogin = async (candidate: string) => {
+    const attempt = ++hiveAuthAttempt.current;
+    diag('login.hiveauth.inicio');
+    setKeychainLoading(true);
+    try {
+      // Sob demanda: dhive + crypto-js só baixam para quem entra pelo app.
+      const { hiveAuthLogin } = await import('./hiveauth');
+      const session = await hiveAuthLogin(candidate, link => {
+        if (attempt !== hiveAuthAttempt.current) return;
+        setHiveAuthLink(link);
+        // Tenta abrir o app direto; se o Safari bloquear, o botão na tela abre.
+        window.location.href = link;
+      });
+      if (attempt !== hiveAuthAttempt.current) return;
+      saveHiveAuthSession(session);
+      diag('login.hiveauth.ok');
+      onLogin(candidate, 'hiveauth');
+    } catch (err) {
+      if (attempt !== hiveAuthAttempt.current) return;
+      diag('login.hiveauth.erro', err);
+      setError(
+        err instanceof HiveAuthRejectedError ? 'Login recusado no app Hive Keychain.'
+          : err instanceof HiveAuthTimeoutError ? `${err.message} Tente de novo.`
+            : `Erro no login pelo app: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    } finally {
+      if (attempt === hiveAuthAttempt.current) {
+        setKeychainLoading(false);
+        setHiveAuthLink(null);
+      }
+    }
+  };
+
+  const cancelHiveAuthLogin = () => {
+    hiveAuthAttempt.current++;
+    diag('login.hiveauth.cancelado');
+    setKeychainLoading(false);
+    setHiveAuthLink(null);
   };
 
   const handlePrivateKeyLogin = async () => {
@@ -281,6 +332,28 @@ export default function HiveLoginModal({
                   )}
                   Login com Hive Keychain
                 </button>
+
+                {hiveAuthLink && (
+                  <div className="flex flex-col gap-2 px-3 py-3 rounded-lg bg-zinc-900 border border-zinc-700">
+                    <p className="text-xs text-zinc-300 font-mono">
+                      Aprove o login no app Hive Keychain e volte para esta página.
+                    </p>
+                    <a
+                      href={hiveAuthLink}
+                      className="flex items-center justify-center w-full px-4 py-2.5 rounded-lg bg-white text-zinc-950
+                                 text-sm font-semibold font-mono hover:bg-zinc-100 transition"
+                    >
+                      Abrir Hive Keychain
+                    </a>
+                    <button
+                      type="button"
+                      onClick={cancelHiveAuthLogin}
+                      className="text-xs text-zinc-500 hover:text-zinc-300 font-mono underline underline-offset-2"
+                    >
+                      cancelar
+                    </button>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-3">
                   <div className="flex-1 h-px bg-zinc-800" />
