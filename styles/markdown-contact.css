@@ -64,32 +64,34 @@
 }
 
 /*
- * Ícones de contato no rodapé. O post do Hive traz um <style> próprio que
- * centraliza a lista (.contato-lista, uma classe); aqui, com duas classes,
- * a lista alinha com a coluna da direita a partir do iPad em pé.
- * Cada link ganha padding para virar um alvo de toque de ~40px.
+ * Ícones de contato no rodapé, na mesma linha do título "Fale com o
+ * estúdio". O post do Hive traz um <style> próprio (.contato-lista, uma
+ * classe, com gap largo); aqui, com duas classes, a lista fica compacta.
+ * Cada link ganha padding para virar um alvo de toque de ~40px, e a margem
+ * negativa à direita compensa esse padding no último ícone, que encosta na
+ * borda da coluna, alinhado com a caixa de mensagem.
  */
+.footer-contact .markdown-contact,
 .footer-contact .markdown-contact ul,
 .footer-contact .markdown-contact p,
 .footer-contact .contato-lista {
   justify-content: center;
-  gap: 0.25rem 0.5rem;
+  gap: 0;
   margin: 0;
 }
 
 .footer-contact .contato-link {
   padding: 0.5rem;
   border-radius: 9999px;
+  color: #737373;
+}
+
+.footer-contact .contato-icone {
+  width: 20px;
+  height: 20px;
 }
 
 @media (min-width: 768px) {
-  .footer-contact .markdown-contact ul,
-  .footer-contact .markdown-contact p,
-  .footer-contact .contato-lista {
-    justify-content: flex-end;
-  }
-
-  /* O último ícone encosta na borda da coluna, alinhado com a caixa. */
   .footer-contact .contato-lista {
     margin-right: -0.5rem;
   }

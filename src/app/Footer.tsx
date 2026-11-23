@@ -5,6 +5,7 @@ import FooterContactForm from '@/components/FooterContactForm';
 import EditPostButton, { SECTION_EDIT_CLASS } from '@/admin/EditPostButton';
 import ImageCarousel from '@/components/ImageCarousel';
 import Markdown from '@/components/Markdown';
+import { TEXT_SECTION_INNER } from '@/components/textSection';
 import { getPostsByBlog, getUserAccount } from '@/../lib/hive/hive-client';
 import { useEffect, useState } from 'react';
 import { extractContactTargets, type ContactTargets } from '@/utility/contact-targets';
@@ -139,13 +140,16 @@ function useDynamicFooterPost(username: string) {
 }
 
 /**
- * Rodapé do site: a marca do estúdio à esquerda; à direita, os ícones de
- * contato e a caixa "Fale com o estúdio". No celular as duas colunas
- * empilham, centralizadas.
+ * Rodapé do site, numa faixa cinza igual à do header para fechar a página
+ * com a mesma moldura do topo.
  *
- * Os ícones vêm do post de contato do Hive (antes uma seção separada acima
- * do rodapé). O id "contact" fica aqui para o link do menu continuar
- * caindo no lugar certo.
+ * Alinha com a coluna das seções de texto (TEXT_SECTION_INNER): a marca do
+ * estúdio à esquerda; à direita, "Fale com o estúdio" com os ícones de
+ * contato na mesma linha e a caixa de mensagem logo abaixo. Embaixo, uma
+ * barra fina com a assinatura (post "footer" do Hive) e a entrada do
+ * artista. No celular tudo empilha, centralizado.
+ *
+ * O id "contact" fica aqui para o link do menu cair no lugar certo.
  */
 export default function Footer() {
   const username = process.env.NEXT_PUBLIC_HIVE_USERNAME || '';
@@ -157,87 +161,103 @@ export default function Footer() {
     error,
   } = useDynamicFooterPost(username);
 
-  const showBrand = !loading && !error && posts.length > 0;
+  const footerPost = !loading && !error ? posts[0] : undefined;
+  const logo = footerPost ? extractImagesFromPost(footerPost) : [];
 
   return (
     <footer
       id="contact"
-      className="w-full border-t border-neutral-200/60 dark:border-neutral-800/70"
+      className="w-full bg-[#e5e5e5] text-neutral-600 dark:bg-black dark:text-neutral-400"
     >
-      <div
-        className={[
-          'mx-auto max-w-6xl px-4 sm:px-8 md:px-12',
-          'pt-10 pb-8 md:pt-14 md:pb-10',
-          'grid items-start gap-10',
-          // iPad em pé já cabe nas duas colunas; a da direita tem largura
-          // de formulário, e a marca fica com o resto.
-          'md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] md:gap-12',
-          'lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]',
-        ].join(' ')}
-      >
-        {/* Marca */}
-        <div
-          className={[
-            'flex flex-col items-center gap-3 text-center',
-            'md:items-start md:text-left',
-            'text-neutral-500 dark:text-neutral-400',
-          ].join(' ')}
-        >
-          {showBrand && posts.map((post) => {
-            const images = extractImagesFromPost(post);
-            return (
-              <article
-                key={post.permlink}
-                className="flex flex-col items-center gap-3 md:items-start"
-              >
-                {images.length > 0 && (
-                  <div
-                    className={[
-                      'w-[120px] md:w-[150px]',
-                      // A marca é um PNG com o quadrado texturizado em
-                      // cinza opaco e o lettering vazado. No claro isso
-                      // funciona; no escuro o quadrado vira um bloco
-                      // aceso. Escurecer preserva a textura e o vazado
-                      // (o filtro não mexe no canal alfa).
-                      'dark:brightness-[0.6]',
-                    ].join(' ')}
-                  >
-                    <ImageCarousel images={images} inExpandedCard />
+      <div className="mx-auto max-w-6xl px-4 sm:px-8 md:px-12">
+        <div className={`${TEXT_SECTION_INNER} pt-10 pb-6 md:pt-12`}>
+          <div
+            className={[
+              'grid items-start gap-8',
+              'md:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] md:gap-12',
+            ].join(' ')}
+          >
+            {/* Marca */}
+            <div className="flex justify-center md:justify-start">
+              {logo.length > 0 && (
+                <div
+                  className={[
+                    'w-[96px] md:w-[112px]',
+                    // A marca é um PNG com o quadrado texturizado em cinza
+                    // opaco e o lettering vazado. No escuro o quadrado vira
+                    // um bloco aceso; escurecer preserva textura e vazado
+                    // (o filtro não mexe no canal alfa).
+                    'dark:brightness-[0.6]',
+                  ].join(' ')}
+                >
+                  <ImageCarousel images={logo} inExpandedCard />
+                </div>
+              )}
+            </div>
+
+            {/* Contato */}
+            <div className="w-full">
+              <div className="mb-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 md:justify-between">
+                <h2
+                  className={[
+                    // Mesmo traço dos títulos de seção, num tamanho menor.
+                    'text-base font-extrabold uppercase tracking-[0.02em]',
+                    'text-gray-900 dark:text-gray-100',
+                  ].join(' ')}
+                >
+                  Fale com o estúdio
+                </h2>
+                {contactPost && (
+                  <div className="footer-contact">
+                    <Markdown className="markdown-contact">
+                      {formatContactBody(contactPost.body)}
+                    </Markdown>
                   </div>
                 )}
-                <div className="text-sm [&_p]:!m-0">
-                  <Markdown removeMedia>{post.body}</Markdown>
-                </div>
-                <EditPostButton
-                  post={post}
-                  label="editar rodapé"
-                  stopPropagation={false}
-                  className={SECTION_EDIT_CLASS}
-                />
-              </article>
-            );
-          })}
+              </div>
 
-          <AdminLoginLink className="mt-1" />
-        </div>
-
-        {/* Contato */}
-        <div className="flex w-full flex-col items-center gap-6 md:items-end">
-          {contactPost && (
-            <div className="footer-contact flex flex-col items-center gap-2 md:items-end">
-              <Markdown className="markdown-contact">
-                {formatContactBody(contactPost.body)}
-              </Markdown>
-              <EditPostButton
-                post={contactPost}
-                label="editar contato"
-                stopPropagation={false}
-                className={SECTION_EDIT_CLASS}
+              <FooterContactForm
+                targets={contactTargets}
+                className="w-full"
+                showLabel={false}
               />
-            </div>
-          )}
 
-          <FooterContactForm targets={contactTargets} className="w-full" />
+              {contactPost && (
+                <div className="mt-3 flex justify-center md:justify-end">
+                  <EditPostButton
+                    post={contactPost}
+                    label="editar contato"
+                    stopPropagation={false}
+                    className={SECTION_EDIT_CLASS}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Assinatura e entrada do artista */}
+          <div
+            className={[
+              'mt-10 flex flex-col items-center gap-3 border-t pt-5',
+              'border-neutral-300 dark:border-neutral-800',
+              'sm:flex-row sm:justify-between',
+            ].join(' ')}
+          >
+            <div className="flex items-center gap-3 [&_p]:!m-0 [&_p]:!text-xs [&_p]:!tracking-wide">
+              {footerPost && (
+                <>
+                  <Markdown removeMedia>{footerPost.body}</Markdown>
+                  <EditPostButton
+                    post={footerPost}
+                    label="editar rodapé"
+                    stopPropagation={false}
+                    className={SECTION_EDIT_CLASS}
+                  />
+                </>
+              )}
+            </div>
+            <AdminLoginLink />
+          </div>
         </div>
       </div>
     </footer>
