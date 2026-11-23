@@ -18,8 +18,11 @@ const SUBJECT = 'Contato pelo site — Wilbor Studio';
  */
 export default function FooterContactForm({
   targets,
+  className = 'mx-auto w-full max-w-sm px-4 pt-6',
 }: {
   targets: ContactTargets
+  /** Largura e posição da caixa; o rodapé decide onde ela fica. */
+  className?: string
 }) {
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
@@ -54,7 +57,7 @@ export default function FooterContactForm({
   ].join(' ');
 
   return (
-    <div className="mx-auto w-full max-w-sm px-4 pt-6 text-left">
+    <div className={`${className} text-left`}>
       <label
         htmlFor="footer-message"
         className={[

@@ -62,3 +62,35 @@
   filter: none;
   opacity: 1;
 }
+
+/*
+ * Ícones de contato no rodapé. O post do Hive traz um <style> próprio que
+ * centraliza a lista (.contato-lista, uma classe); aqui, com duas classes,
+ * a lista alinha com a coluna da direita a partir do iPad em pé.
+ * Cada link ganha padding para virar um alvo de toque de ~40px.
+ */
+.footer-contact .markdown-contact ul,
+.footer-contact .markdown-contact p,
+.footer-contact .contato-lista {
+  justify-content: center;
+  gap: 0.25rem 0.5rem;
+  margin: 0;
+}
+
+.footer-contact .contato-link {
+  padding: 0.5rem;
+  border-radius: 9999px;
+}
+
+@media (min-width: 768px) {
+  .footer-contact .markdown-contact ul,
+  .footer-contact .markdown-contact p,
+  .footer-contact .contato-lista {
+    justify-content: flex-end;
+  }
+
+  /* O último ícone encosta na borda da coluna, alinhado com a caixa. */
+  .footer-contact .contato-lista {
+    margin-right: -0.5rem;
+  }
+}
