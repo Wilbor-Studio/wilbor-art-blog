@@ -1,7 +1,7 @@
 /* eslint-disable */
 'use client';
 
-import { getPostsByBlog, getUserAccount } from "@/../lib/hive/hive-client";
+import { getAllPostsByBlog, getUserAccount } from "@/../lib/hive/hive-client";
 import { isBlockedPermlink } from '@/lib/hive/blocked-posts';
 import EditPostButton, { SECTION_EDIT_CLASS } from '@/admin/EditPostButton';
 import EditSiteContentButton from '@/admin/EditSiteContentButton';
@@ -109,7 +109,7 @@ function useDynamicAboutPost(username: string) {
         }
         
         console.log(`Usuário ${username} encontrado, buscando posts...`);
-        const allPosts = await getPostsByBlog(username);
+        const allPosts = await getAllPostsByBlog(username);
         console.log(`Total de posts encontrados: ${allPosts.length}`);
         console.log('Títulos dos posts:', allPosts.map((p: any) => p.title));
         
@@ -146,8 +146,9 @@ export default function About() {
     <div className={TEXT_SECTION_SHELL}>
       <div className={TEXT_SECTION_INNER}>
         {/* Título e resumo são conteúdo do site: ficam de fora do gate do
-            Hive para continuarem aparecendo se o fetch falhar. O título
-            abre e fecha só o resumo; "saber mais" fica sempre visível. */}
+            Hive para continuarem aparecendo se o fetch falhar. Fechada, a
+            seção é só o título; aberta, mostra o resumo e, abaixo dele, a
+            subseção "saber mais sobre a história" (o post longo). */}
         <CollapsibleSection
           size="title"
           label={siteConfig.sectionTitles.about}
@@ -162,11 +163,9 @@ export default function About() {
           }
         >
           <AboutSummary markdown={summaryBody} />
-        </CollapsibleSection>
 
         {!loading && !error && hivePosts.length > 0 && (
           <CollapsibleSection
-            size="title"
             label="saber mais sobre a história"
             action={
               <EditPostButton
@@ -217,6 +216,7 @@ export default function About() {
             })}
           </CollapsibleSection>
         )}
+        </CollapsibleSection>
       </div>
     </div>
   );

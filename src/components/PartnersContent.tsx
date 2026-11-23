@@ -1,6 +1,6 @@
 'use client';
 
-import { getPostsByBlog, getUserAccount } from "@/../lib/hive/hive-client";
+import { getAllPostsByBlog, getUserAccount } from "@/../lib/hive/hive-client";
 import EditPostButton, { SECTION_EDIT_CLASS } from '@/admin/EditPostButton';
 import CollapsibleSection from '@/components/CollapsibleSection';
 import { TEXT_SECTION_INNER, TEXT_SECTION_SHELL } from '@/components/textSection';
@@ -91,7 +91,7 @@ function useDynamicPartnersPost(username: string) {
         }
 
         console.log(`Usuário ${username} encontrado, buscando posts...`);
-        const allPosts = await getPostsByBlog(username);
+        const allPosts = await getAllPostsByBlog(username);
         console.log(`Total de posts encontrados: ${allPosts.length}`);
 
         const matchingPosts = allPosts.filter((post: any) =>
@@ -161,29 +161,21 @@ export default function PartnersContent() {
   return (
       <div className={TEXT_SECTION_SHELL}>
         <div className={TEXT_SECTION_INNER}>
-          {/* Título da seção: o post do Hive começa direto na primeira
-              categoria, sem dizer de que parte do site se trata. */}
-          <div className="flex items-center gap-3">
-          <h2
-            className={[
-              'flex-1 min-w-0',
-              // Mesmo tamanho e mesma altura de linha dos títulos recolhíveis
-              // (Sobre, Exposições): py igual ao do CollapsibleSection.
-              'font-mono text-2xl font-extrabold uppercase tracking-[0.02em] leading-tight',
-              'text-gray-900 dark:text-gray-100',
-              'py-4 sm:py-5',
-            ].join(' ')}
+          {/* Fechada, a seção é só o título (o post do Hive começa direto
+              na primeira categoria, sem dizer de que parte do site se
+              trata). Aberta, mostra as categorias como subseções. */}
+          <CollapsibleSection
+            size="title"
+            label={siteConfig.sectionTitles.partners}
+            labelOpen={siteConfig.sectionTitles.partners}
+            action={!loading && !error && hivePosts[0] && (
+              <EditPostButton
+                post={hivePosts[0]}
+                stopPropagation={false}
+                className={SECTION_EDIT_CLASS}
+              />
+            )}
           >
-            {siteConfig.sectionTitles.partners}
-          </h2>
-          {!loading && !error && hivePosts[0] && (
-            <EditPostButton
-              post={hivePosts[0]}
-              stopPropagation={false}
-              className={SECTION_EDIT_CLASS}
-            />
-          )}
-          </div>
           {!loading && !error && hivePosts.length > 0 && (
             <div>
               {hivePosts.map((post, index) => {
@@ -268,6 +260,7 @@ export default function PartnersContent() {
               })}
             </div>
           )}
+          </CollapsibleSection>
         </div>
       </div>
   );

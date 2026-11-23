@@ -6,7 +6,7 @@ import EditPostButton, { SECTION_EDIT_CLASS } from '@/admin/EditPostButton';
 import ImageCarousel from '@/components/ImageCarousel';
 import Markdown from '@/components/Markdown';
 import { TEXT_SECTION_INNER } from '@/components/textSection';
-import { getPostsByBlog, getUserAccount } from '@/../lib/hive/hive-client';
+import { getAllPostsByBlog, getUserAccount } from '@/../lib/hive/hive-client';
 import { useEffect, useState } from 'react';
 import { extractContactTargets, type ContactTargets } from '@/utility/contact-targets';
 
@@ -107,7 +107,7 @@ function useDynamicFooterPost(username: string) {
           return;
         }
 
-        const allPosts = await getPostsByBlog(username);
+        const allPosts = await getAllPostsByBlog(username);
         const matchingPosts = allPosts.filter((post: HivePost) =>
           post.title && TITLE_KEYWORDS.some((keyword) =>
             post.title.toLowerCase().includes(keyword.toLowerCase()),

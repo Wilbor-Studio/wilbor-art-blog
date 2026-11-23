@@ -1,6 +1,6 @@
 'use client';
 
-import { getPostsByBlog, getUserAccount } from "@/../lib/hive/hive-client";
+import { getAllPostsByBlog, getUserAccount } from "@/../lib/hive/hive-client";
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { A11y, Navigation, Pagination, Scrollbar } from 'swiper/modules';
@@ -120,7 +120,7 @@ function useDynamicPartnersPost(username: string) {
         }
 
         console.log(`Usuário ${username} encontrado, buscando posts...`);
-        const allPosts = await getPostsByBlog(username);
+        const allPosts = await getAllPostsByBlog(username);
         console.log(`Total de posts encontrados: ${allPosts.length}`);
 
         const matchingPosts = allPosts.filter((post: any) =>

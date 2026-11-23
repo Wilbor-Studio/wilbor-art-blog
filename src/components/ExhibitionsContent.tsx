@@ -1,6 +1,6 @@
 'use client';
 
-import { getPostsByBlog, getUserAccount } from "@/../lib/hive/hive-client";
+import { getAllPostsByBlog, getUserAccount } from "@/../lib/hive/hive-client";
 import EditPostButton, { SECTION_EDIT_CLASS } from '@/admin/EditPostButton';
 import Markdown from "@/components/Markdown";
 import CollapsibleSection from '@/components/CollapsibleSection';
@@ -87,7 +87,7 @@ function useDynamicExhibitionsPost(username: string) {
         }
 
         console.log(`Usuário ${username} encontrado, buscando posts...`);
-        const allPosts = await getPostsByBlog(username);
+        const allPosts = await getAllPostsByBlog(username);
         console.log(`Total de posts encontrados: ${allPosts.length}`);
         console.log('Títulos dos posts:', allPosts.map((p: any) => p.title));
 
