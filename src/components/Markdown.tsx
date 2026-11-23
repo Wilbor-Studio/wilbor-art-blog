@@ -1,6 +1,7 @@
 import ReactMarkdown, { type Components } from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
+import ExpandableCarousel from './ExpandableCarousel';
 import ImageCarousel from './ImageCarousel';
 import { EXHIBITION_DATE_PATTERN } from '@/utility/exhibition-markdown';
 
@@ -524,7 +525,12 @@ export default function Markdown({ children, className = '', removeMedia = false
                                     : "my-6 first:mt-0 last:mb-0"
                             }
                         >
-                            <ImageCarousel images={block.images} inExpandedCard={inExpandedCard} hasLittleContent={hasLittleContent} />
+                            {/* No card aberto, cada carrossel tem a própria tela cheia. */}
+                            {inExpandedCard ? (
+                                <ExpandableCarousel images={block.images} inExpandedCard hasLittleContent={hasLittleContent} />
+                            ) : (
+                                <ImageCarousel images={block.images} hasLittleContent={hasLittleContent} />
+                            )}
                         </div>
                     );
                 }

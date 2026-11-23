@@ -3,7 +3,6 @@
 import { useHiveAuth } from '@/admin/HiveAuthProvider';
 import ProjectAdminMenu from '@/admin/ProjectAdminMenu';
 import { IconX } from '@/components/IconX';
-import ImageCarousel from '@/components/ImageCarousel';
 import Markdown from '@/components/Markdown';
 import ShareTagButton from '@/components/ShareTagButton';
 import { MarkdownRenderer } from '@/lib/markdown/MarkdownRenderer';
@@ -11,7 +10,6 @@ import '@/styles/slider-custom.css';
 import { clsx } from 'clsx/lite';
 import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import 'swiper/css';
 import 'swiper/css/pagination';
 import { extractImagesFromMarkdown } from './components/markdownUtils';
@@ -31,12 +29,6 @@ const formatPinataUrl = (url: string): string => {
 
 function normalizeImageSrc(src?: string | null) {
     return (src || '').trim();
-}
-
-// Mesma imagem pode chegar com query string diferente (token de gateway IPFS),
-// então a comparação usa só a parte estável da URL.
-function imageIdentity(src?: string | null) {
-    return normalizeImageSrc(src).split('?')[0].split('#')[0];
 }
 
 function getPostImages(item: Media): string[] {
@@ -163,8 +155,6 @@ const MediaItem = ({
     const contentRef = useRef<HTMLDivElement>(null);
     const [imageError, setImageError] = useState(false);
     const [showAllTags, setShowAllTags] = useState(false);
-    const [isFullscreen, setIsFullscreen] = useState(false);
-    const [mounted, setMounted] = useState(false);
     const [linkCopied, setLinkCopied] = useState(false);
     const images = getPostImages(mainItem);
 
@@ -180,10 +170,6 @@ const MediaItem = ({
             }
         }
     }, [shareUrl]);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
 
     // Bloqueia scroll automático quando vídeo é clicado
     useEffect(() => {
@@ -231,88 +217,6 @@ const MediaItem = ({
         };
     }, [isExpanded]);
 
-    // Fecha fullscreen com ESC, navega com setas esquerda/direita e bloqueia scroll de fundo enquanto aberto
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-
-        const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                setIsFullscreen(false);
-            }
-        };
-
-        if (!isFullscreen) {
-            return;
-        }
-
-        const { body, documentElement } = document;
-        const scrollY = window.scrollY;
-
-        const prevBodyOverflow = body.style.overflow;
-        const prevBodyPosition = body.style.position;
-        const prevBodyTop = body.style.top;
-        const prevBodyLeft = body.style.left;
-        const prevBodyRight = body.style.right;
-        const prevBodyWidth = body.style.width;
-        const prevBodyBackground = body.style.backgroundColor;
-        const prevDocBackground = documentElement.style.backgroundColor;
-        const prevFullscreenVh = documentElement.style.getPropertyValue('--fullscreen-vh');
-
-        const prevDocOverflow = documentElement.style.overflow;
-        const prevDocOverscroll = documentElement.style.overscrollBehavior;
-        const prevBodyOverscroll = body.style.overscrollBehavior;
-
-        documentElement.style.overflow = 'hidden';
-        documentElement.style.overscrollBehavior = 'none';
-        documentElement.style.backgroundColor = '#000';
-        body.style.overflow = 'hidden';
-        body.style.overscrollBehavior = 'none';
-        body.style.backgroundColor = '#000';
-
-        const setViewportHeightVar = () => {
-            const visualHeight = window.visualViewport?.height ?? window.innerHeight;
-            documentElement.style.setProperty('--fullscreen-vh', `${Math.round(visualHeight)}px`);
-        };
-        setViewportHeightVar();
-
-        // iOS/Android: fixa o body para impedir scroll de fundo durante fullscreen
-        body.style.position = 'fixed';
-        body.style.top = `-${scrollY}px`;
-        body.style.left = '0';
-        body.style.right = '0';
-        body.style.width = '100%';
-
-        window.addEventListener('keydown', onKey);
-        window.addEventListener('resize', setViewportHeightVar);
-        window.visualViewport?.addEventListener('resize', setViewportHeightVar);
-        window.visualViewport?.addEventListener('scroll', setViewportHeightVar);
-
-        return () => {
-            window.removeEventListener('keydown', onKey);
-            window.removeEventListener('resize', setViewportHeightVar);
-            window.visualViewport?.removeEventListener('resize', setViewportHeightVar);
-            window.visualViewport?.removeEventListener('scroll', setViewportHeightVar);
-
-            documentElement.style.overflow = prevDocOverflow;
-            documentElement.style.overscrollBehavior = prevDocOverscroll;
-            documentElement.style.backgroundColor = prevDocBackground;
-            body.style.overflow = prevBodyOverflow;
-            body.style.overscrollBehavior = prevBodyOverscroll;
-            body.style.backgroundColor = prevBodyBackground;
-            body.style.position = prevBodyPosition;
-            body.style.top = prevBodyTop;
-            body.style.left = prevBodyLeft;
-            body.style.right = prevBodyRight;
-            body.style.width = prevBodyWidth;
-            if (prevFullscreenVh) {
-                documentElement.style.setProperty('--fullscreen-vh', prevFullscreenVh);
-            } else {
-                documentElement.style.removeProperty('--fullscreen-vh');
-            }
-
-            window.scrollTo(0, scrollY);
-        }
-    }, [isFullscreen, images.length]);
     function getThumbnailUrl(item: Media): string | null {
         try {
             if (item.hiveMetadata) {
@@ -395,15 +299,6 @@ const MediaItem = ({
             onContentSizeChange(false);
         }
     }, [isExpanded, mainItem.hiveMetadata?.body, mainItem.src]);
-
-    // Tela cheia mostra o conteúdo do post sem repetir a capa do card.
-    const coverIdentities = [updatedThumbnail, thumbnailUrl, mainItem.thumbnailSrc]
-        .map(imageIdentity)
-        .filter(Boolean);
-
-    const fullscreenImages = Array.from(new Set(images.filter(Boolean)))
-        .filter((src) => !coverIdentities.includes(imageIdentity(src)))
-        .map((src) => ({ src, alt: mainItem.title || '' }));
 
     const renderMedia = (media: Media, isMainVideo: boolean = false) => {
         if (media.src?.includes(SKATEHIVE_URL)) {
@@ -739,26 +634,6 @@ const MediaItem = ({
                                         )}
                                     </button>
                                 )} */}
-                                {/* Botão de zoom para abrir o post inteiro em destaque central (tela cheia) */}
-                                {fullscreenImages.length > 0 && (
-                                    <button
-                                        onClick={e => {
-                                            e.stopPropagation();
-                                            setIsFullscreen(true);
-                                        }}
-                                        className="p-1.5 sm:p-2 bg-transparent border-none shadow-none flex items-center justify-center hover:bg-transparent rounded-full transition-colors"
-                                        aria-label="Abrir em tela cheia"
-                                        title="Abrir em tela cheia"
-                                    >
-                                        <Image
-                                            src="/wilborPhotos/Full-Screen-Icon-Wilbor-site.png"
-                                            alt="Abrir em tela cheia"
-                                            width={28}
-                                            height={28}
-                                            style={{ display: 'inline-block' }}
-                                        />
-                                    </button>
-                                )}
                                 <button
                                     onClick={e => { e.stopPropagation(); onExpand(); }}
                                     className="p-1.5 sm:p-2 bg-transparent border-none shadow-none rounded-full transition-colors flex items-center justify-center focus:outline-none hover:bg-transparent"
@@ -790,42 +665,7 @@ const MediaItem = ({
                 )}
 
             </div>
-            {/* Modal fullscreen renderizado via Portal fora do card: abre a thumb do card em tela cheia + carrossel das demais imagens */}
-            {mounted && isFullscreen && typeof window !== 'undefined' && createPortal(
-                <div
-                    className="fixed top-0 left-0 right-0 z-[9999]"
-                    style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        width: '100vw',
-                        height: 'var(--fullscreen-vh, 100svh)',
-                        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-                        backgroundColor: '#000',
-                    }}
-                >
-                    {/* Botão de fechar no topo direito */}
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setIsFullscreen(false);
-                        }}
-                        className="fixed top-4 right-4 sm:top-6 sm:right-6 z-[10000] bg-transparent border-none shadow-none rounded-full transition-colors p-1 sm:p-2 flex items-center justify-center focus:outline-none"
-                        aria-label="Fechar fullscreen"
-                        style={{ background: 'transparent', border: 'none', boxShadow: 'none' }}
-                    >
-                        <IconX size={35} />
-                    </button>
-
-                    {/* Carrossel em tela cheia: inicia pela thumb do card e navega pelas demais imagens */}
-                    <ImageCarousel
-                        images={fullscreenImages}
-                        fullscreen
-                    />
-                </div>,
-                document.body
-            )}
+            {/* A tela cheia agora é por carrossel: ver ExpandableCarousel. */}
         </div>
     );
 };
