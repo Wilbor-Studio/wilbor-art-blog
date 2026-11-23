@@ -234,6 +234,8 @@ export async function toggleProjectTag({
     throw new Error('O post precisa ter pelo menos 1 tag.');
   }
 
+  const nextMetadata = JSON.stringify({ ...metadata, tags: nextTags });
+
   const operations: Operation[] = [[
     'comment',
     {
@@ -245,11 +247,12 @@ export async function toggleProjectTag({
       permlink,
       title,
       body,
-      json_metadata: JSON.stringify({ ...metadata, tags: nextTags }),
+      json_metadata: nextMetadata,
     },
   ]];
 
   await broadcastOperations(username, operations, postingKey);
+  return nextMetadata;
 }
 
 /** Extrai title/body/tags/imagens de um post do Hive para preencher o editor. */
