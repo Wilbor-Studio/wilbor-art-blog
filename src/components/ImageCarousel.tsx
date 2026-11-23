@@ -23,8 +23,9 @@ const MAX_RATIO = 2;
  * na primeira imagem e a próxima, na última (sem dar a volta).
  *
  * Fora da tela cheia, a proporção vem da primeira imagem (dentro de
- * 3:4 a 2:1), como no Instagram: a altura não pula enquanto se desliza, e
- * imagens com outra proporção aparecem inteiras, sem corte.
+ * 3:4 a 2:1) e as outras são recortadas nesse formato, como no Instagram:
+ * a altura não pula e não sobra faixa entre uma foto e outra ao deslizar.
+ * A foto inteira fica na tela cheia.
  *
  * Aceita índice controlado (currentIndex/onIndexChange) para a tela cheia
  * abrir na imagem certa e responder às setas do teclado.
@@ -153,8 +154,6 @@ export default function ImageCarousel({
                   flex: '0 0 100%',
                   scrollSnapAlign: 'center',
                   scrollSnapStop: 'always',
-                  // Respiro nas bordas da tela cheia no iPad.
-                  padding: fullscreen ? 'min(2vw, 16px)' : 0,
                 }}
               >
                 <img
@@ -164,7 +163,11 @@ export default function ImageCarousel({
                   decoding="async"
                   draggable={false}
                   className="block h-full w-full select-none"
-                  style={{ objectFit: 'contain', objectPosition: 'center' }}
+                  // Como no Instagram: no card, toda foto preenche o carrossel
+                  // (recortada no formato da primeira), sem faixas que, ao
+                  // deslizar, parecem uma borda entre as imagens. Na tela
+                  // cheia ela aparece inteira, sobre o fundo preto.
+                  style={{ objectFit: fullscreen ? 'contain' : 'cover', objectPosition: 'center' }}
                   onLoad={event => {
                     if (idx !== 0) return;
                     const { naturalWidth, naturalHeight } = event.currentTarget;
