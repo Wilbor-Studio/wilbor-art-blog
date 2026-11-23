@@ -81,7 +81,8 @@ export default function CollapsibleSection({
         <svg
           className={[
             'ml-auto h-5 w-5 shrink-0 transition-transform duration-200',
-            isOpen ? 'rotate-180' : '',
+            // Fechado aponta para o rótulo (esquerda); aberto, para o conteúdo.
+            isOpen ? '' : 'rotate-90',
           ].join(' ')}
           fill="none"
           viewBox="0 0 24 24"

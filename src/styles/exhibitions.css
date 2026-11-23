@@ -138,3 +138,48 @@
     }
   }
 }
+
+/*
+ * Fundos das seções de texto da landing, em degraus iguais: Sobre é a mais
+ * escura e cada seção abaixo fica um tom mais clara (Exposições →
+ * Publicações → Parceiros). Ficam juntos aqui para a escala ser ajustada
+ * num lugar só. Publicações é uma faixa dentro de Exposições
+ * (.publications-band, logo abaixo).
+ */
+:root {
+  --tone-about: #e5e5e5;        /* neutral-200 */
+  --tone-exhibitions: #ebebeb;
+  --tone-publications: #f2f2f2;
+  --tone-partners: #f8f8f8;
+}
+
+.dark {
+  --tone-about: #141414;
+  --tone-exhibitions: #1c1c1c;
+  --tone-publications: #242424;
+  --tone-partners: #2c2c2c;
+}
+
+/*
+ * Faixa de fundo de Publicações, dentro da seção de Exposições. O conteúdo
+ * fica na coluna centralizada, mas o fundo vai de borda a borda da tela:
+ * o box-shadow estende a cor para os lados e para baixo, e o clip-path
+ * corta só o que subiria. Para baixo, quem corta é a própria seção
+ * (overflow-hidden em #exhibitions), assim a faixa chega até o fim dela
+ * sem sobrar uma tira do cinza de Exposições.
+ */
+.publications-band {
+  --band-bg: var(--tone-publications);
+  --band-rule: rgb(229 229 229 / 0.4);
+
+  background: var(--band-bg);
+  box-shadow: 0 0 0 100vmax var(--band-bg);
+  clip-path: inset(0 -100vmax -100vmax);
+  border-top: 1px solid var(--band-rule);
+  margin-top: 1.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.dark .publications-band {
+  --band-rule: rgb(38 38 38 / 0.7);
+}

@@ -209,7 +209,7 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
         </section>
 
         {/* ABOUT COMO SEÇÃO DA LANDING */}
-        <section id="about" className="w-full bg-neutral-50 dark:bg-neutral-900 border-t border-neutral-200/40 dark:border-neutral-800/70">
+        <section id="about" className="w-full bg-[var(--tone-about)] border-t border-neutral-200/40 dark:border-neutral-800/70">
           <div className="max-w-6xl mx-auto">
             <ScrollReveal forceMount>
               <MemoizedAbout />
@@ -218,7 +218,7 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
         </section>
 
         {/* EXHIBITIONS COMO SEÇÃO DA LANDING */}
-        <section id="exhibitions" className="w-full bg-gray-100 dark:bg-neutral-800 border-t border-neutral-200/40 dark:border-neutral-800/70">
+        <section id="exhibitions" className="w-full overflow-hidden bg-[var(--tone-exhibitions)] border-t border-neutral-200/40 dark:border-neutral-800/70">
           <div className="max-w-6xl mx-auto">
             <ScrollReveal forceMount>
               <MemoizedExhibitionsContent />
@@ -227,7 +227,7 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
         </section>
 
         {/* PARTNERS COMO SEÇÃO DA LANDING */}
-        <section id="partners" className="w-full bg-slate-100 dark:bg-neutral-700 border-t border-neutral-200/40 dark:border-neutral-800/70">
+        <section id="partners" className="w-full bg-[var(--tone-partners)] border-t border-neutral-200/40 dark:border-neutral-800/70">
           <div className="max-w-6xl mx-auto">
             <ScrollReveal forceMount>
               <MemoizedPartnersContent />

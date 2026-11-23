@@ -203,16 +203,24 @@ export default function ExhibitionsContent() {
                         {section.body}
                       </Markdown>
                     ) : (
-                      <CollapsibleSection
+                      <div
                         key={sectionIndex}
-                        size="title"
-                        label={section.title}
-                        labelOpen={section.title}
+                        // Publicações ganham uma faixa de fundo própria, como
+                        // a troca de cor entre as seções da página.
+                        className={/publica/i.test(section.title)
+                          ? 'publications-band'
+                          : undefined}
                       >
-                        <Markdown className="exhibition-content" removeMedia>
-                          {section.body}
-                        </Markdown>
-                      </CollapsibleSection>
+                        <CollapsibleSection
+                          size="title"
+                          label={section.title}
+                          labelOpen={section.title}
+                        >
+                          <Markdown className="exhibition-content" removeMedia>
+                            {section.body}
+                          </Markdown>
+                        </CollapsibleSection>
+                      </div>
                     )
                   )}
                   {index < hivePosts.length - 1 && (
