@@ -45,3 +45,14 @@
       max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
   }
 }
+
+/*
+ * Espaço da barra do artista no fim da página. A AdminBar define
+ * --admin-bar-space enquanto existe; o rodapé estende a faixa dele por esse
+ * tanto, e assim a assinatura e os botões de editar do fim da página nunca
+ * ficam escondidos atrás da barra. Para o público a variável não existe e
+ * nada muda.
+ */
+footer#contact {
+  padding-bottom: var(--admin-bar-space, 0px);
+}

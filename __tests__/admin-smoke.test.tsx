@@ -71,7 +71,7 @@ describe('área do artista', () => {
   it('não mostra nada de admin para visitante anônimo', async () => {
     renderAdmin();
     await waitFor(() => {
-      expect(screen.queryByText('+ novo projeto')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /novo projeto/i })).not.toBeInTheDocument();
     });
     expect(screen.queryByText('editar')).not.toBeInTheDocument();
   });
@@ -80,7 +80,7 @@ describe('área do artista', () => {
     setSession('outro-usuario');
     renderAdmin();
     await waitFor(() => {
-      expect(screen.queryByText('+ novo projeto')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /novo projeto/i })).not.toBeInTheDocument();
     });
     expect(screen.queryByText('editar')).not.toBeInTheDocument();
   });
@@ -88,9 +88,11 @@ describe('área do artista', () => {
   it('mostra a barra e o botão editar para a conta dona', async () => {
     setSession(OWNER);
     renderAdmin();
-    expect(await screen.findByText('+ novo projeto')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /novo projeto/i })).toBeInTheDocument();
     expect(await screen.findByText('editar')).toBeInTheDocument();
     expect(screen.getByText(`@${OWNER}`)).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Controles do artista' }))
+      .toBeInTheDocument();
   });
 
   it('abre o editor preenchido com o conteúdo atual do post', async () => {
@@ -114,7 +116,7 @@ describe('área do artista', () => {
     setSession(OWNER);
     renderAdmin();
 
-    fireEvent.click(await screen.findByText('+ novo projeto'));
+    fireEvent.click(await screen.findByRole('button', { name: /novo projeto/i }));
 
     expect(await screen.findByRole('dialog', { name: /criar projeto/i }))
       .toBeInTheDocument();
@@ -126,7 +128,7 @@ describe('área do artista', () => {
     setSession(OWNER);
     renderAdmin();
 
-    fireEvent.click(await screen.findByText('+ novo projeto'));
+    fireEvent.click(await screen.findByRole('button', { name: /novo projeto/i }));
     fireEvent.click(screen.getByText('Publicar'));
     expect(await screen.findByText('Título obrigatório.')).toBeInTheDocument();
 
@@ -141,10 +143,10 @@ describe('área do artista', () => {
     setSession(OWNER);
     renderAdmin();
 
-    fireEvent.click(await screen.findByText('sair'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Sair' }));
 
     await waitFor(() => {
-      expect(screen.queryByText('+ novo projeto')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /novo projeto/i })).not.toBeInTheDocument();
     });
     expect(localStorage.getItem('wilbor_admin_username')).toBeNull();
   });

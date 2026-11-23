@@ -86,10 +86,20 @@ export default function SoundContent() {
             <Markdown>{published}</Markdown>
           </CollapsibleSection>
         ) : (
-          // Só o artista chega aqui: a seção ainda não foi publicada.
+          // Só o artista chega aqui: a seção ainda não foi publicada. O
+          // título usa a mesma cor dos outros (em cinza claro parecia
+          // defeito); o estado fica no selo ao lado.
           <div className="flex items-center gap-3 py-4 sm:py-5">
-            <span className="flex-1 min-w-0 text-2xl font-extrabold uppercase tracking-[0.02em] leading-tight text-gray-400 dark:text-gray-600">
-              {title}
+            <span className="flex flex-1 min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="text-2xl font-extrabold uppercase tracking-[0.02em] leading-tight text-gray-900 dark:text-gray-100">
+                {title}
+              </span>
+              <span
+                className="rounded-full bg-amber-400 px-2 py-0.5 font-mono text-[10px] text-black whitespace-nowrap"
+                title="Quem visita ainda não vê esta seção."
+              >
+                não publicada · só você vê
+              </span>
             </span>
             <EditSiteContentButton
               permlink={PERMLINK_SOUND}

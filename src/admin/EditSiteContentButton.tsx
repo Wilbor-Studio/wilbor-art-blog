@@ -47,7 +47,9 @@ export default function EditSiteContentButton({
     <>
       <button
         type="button"
-        className={`border-0 bg-transparent shadow-none ${SECTION_EDIT_CLASS}`}
+        // Mesmo visual dos outros "editar" (com borda); só a sombra que o
+        // tailwind.css dá a todo <button> é zerada.
+        className={`shadow-none ${SECTION_EDIT_CLASS}`}
         onClick={() => setIsOpen(true)}
       >
         <svg
