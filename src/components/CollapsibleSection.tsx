@@ -73,7 +73,9 @@ export default function CollapsibleSection({
             size === 'title'
               // Mesmo tamanho dos títulos de seção (ex.: "Exposições").
               ? 'text-2xl font-extrabold tracking-[0.02em] leading-tight text-gray-900 dark:text-gray-100'
-              : 'text-sm sm:text-base font-medium tracking-wide',
+              // Subseção (categorias de Parceiros, "saber mais" do Sobre): em
+              // negrito, como os títulos, só que menor.
+              : 'text-sm sm:text-base font-bold tracking-wide',
           ].join(' ')}
         >
           {isOpen ? labelOpen : label}
