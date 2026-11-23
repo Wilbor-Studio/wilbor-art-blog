@@ -133,12 +133,6 @@ export default function ExhibitionsContent() {
             return (
               <article key={post.permlink}>
                 <div className="space-y-1 sm:space-y-0">
-                  <EditPostButton
-                    post={post}
-                    label="editar exposição"
-                    stopPropagation={false}
-                    className={`mb-2 ${SECTION_EDIT_CLASS}`}
-                  />
                   {media.images.length > 0 && (
                     <div className="w-full mb-2">
                       {media.images.length === 1 ? (
@@ -216,6 +210,15 @@ export default function ExhibitionsContent() {
                           size="title"
                           label={section.title}
                           labelOpen={section.title}
+                          // Exposições e Publicações moram no mesmo post:
+                          // os dois "editar" abrem o mesmo texto.
+                          action={
+                            <EditPostButton
+                              post={post}
+                              stopPropagation={false}
+                              className={SECTION_EDIT_CLASS}
+                            />
+                          }
                         >
                           <Markdown className="exhibition-content" removeMedia>
                             {section.body}

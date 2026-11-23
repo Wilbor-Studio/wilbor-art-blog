@@ -163,8 +163,10 @@ export default function PartnersContent() {
         <div className={TEXT_SECTION_INNER}>
           {/* Título da seção: o post do Hive começa direto na primeira
               categoria, sem dizer de que parte do site se trata. */}
+          <div className="flex items-center gap-3">
           <h2
             className={[
+              'flex-1 min-w-0',
               // Mesmo tamanho e mesma altura de linha dos títulos recolhíveis
               // (Sobre, Exposições): py igual ao do CollapsibleSection.
               'font-mono text-2xl font-extrabold uppercase tracking-[0.02em] leading-tight',
@@ -174,6 +176,14 @@ export default function PartnersContent() {
           >
             {siteConfig.sectionTitles.partners}
           </h2>
+          {!loading && !error && hivePosts[0] && (
+            <EditPostButton
+              post={hivePosts[0]}
+              stopPropagation={false}
+              className={SECTION_EDIT_CLASS}
+            />
+          )}
+          </div>
           {!loading && !error && hivePosts.length > 0 && (
             <div>
               {hivePosts.map((post, index) => {
@@ -181,12 +191,14 @@ export default function PartnersContent() {
                 return (
                   <article key={post.permlink}>
                     <div className="space-y-0">
-                      <EditPostButton
-                        post={post}
-                        label="editar parceiros"
-                        stopPropagation={false}
-                        className={`mb-2 ${SECTION_EDIT_CLASS}`}
-                      />
+                      {/* O primeiro post se edita pelo título da seção. */}
+                      {index > 0 && (
+                        <EditPostButton
+                          post={post}
+                          stopPropagation={false}
+                          className={`mb-2 ${SECTION_EDIT_CLASS}`}
+                        />
+                      )}
                       {media.images.length > 0 && (
                         <div className="w-full mb-2">
                           {media.images.length === 1 ? (

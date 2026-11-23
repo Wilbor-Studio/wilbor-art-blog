@@ -4,7 +4,10 @@
 import { getPostsByBlog, getUserAccount } from "@/../lib/hive/hive-client";
 import { isBlockedPermlink } from '@/lib/hive/blocked-posts';
 import EditPostButton, { SECTION_EDIT_CLASS } from '@/admin/EditPostButton';
-import AboutSummary from '@/components/AboutSummary';
+import EditSiteContentButton from '@/admin/EditSiteContentButton';
+import AboutSummary, { ABOUT_SUMMARY_FALLBACK } from '@/components/AboutSummary';
+import { PERMLINK_ABOUT_SUMMARY } from '@/lib/hive/site-content';
+import { useSitePost } from '@/lib/hive/useSitePost';
 import CollapsibleSection from '@/components/CollapsibleSection';
 import { TEXT_SECTION_INNER, TEXT_SECTION_SHELL } from '@/components/textSection';
 import Markdown from '@/components/Markdown';
@@ -137,6 +140,7 @@ export default function About() {
   const { posts: hivePosts, loading, error } = useDynamicAboutPost(
     process.env.NEXT_PUBLIC_HIVE_USERNAME || ''
   );
+  const { body: summaryBody } = useSitePost(PERMLINK_ABOUT_SUMMARY);
 
   return (
     <div className={TEXT_SECTION_SHELL}>
@@ -148,23 +152,43 @@ export default function About() {
           size="title"
           label={siteConfig.sectionTitles.about}
           labelOpen={siteConfig.sectionTitles.about}
+          action={
+            <EditSiteContentButton
+              permlink={PERMLINK_ABOUT_SUMMARY}
+              title="resumo sobre"
+              currentMarkdown={summaryBody}
+              fallbackMarkdown={ABOUT_SUMMARY_FALLBACK}
+            />
+          }
         >
-          <AboutSummary />
+          <AboutSummary markdown={summaryBody} />
         </CollapsibleSection>
 
         {!loading && !error && hivePosts.length > 0 && (
-          <CollapsibleSection size="title" label="saber mais sobre a história">
+          <CollapsibleSection
+            size="title"
+            label="saber mais sobre a história"
+            action={
+              <EditPostButton
+                post={hivePosts[0]}
+                stopPropagation={false}
+                className={SECTION_EDIT_CLASS}
+              />
+            }
+          >
             {hivePosts.map((post, index) => {
               const media = extractMediaFromPost(post);
               return (
                 <article key={post.permlink}>
                   <div className="space-y-1 sm:space-y-0">
-                    <EditPostButton
-                      post={post}
-                      label="editar sobre"
-                      stopPropagation={false}
-                      className={`mb-2 ${SECTION_EDIT_CLASS}`}
-                    />
+                    {/* O primeiro post se edita pelo título da seção. */}
+                    {index > 0 && (
+                      <EditPostButton
+                        post={post}
+                        stopPropagation={false}
+                        className={`mb-2 ${SECTION_EDIT_CLASS}`}
+                      />
+                    )}
                     <Markdown images={media.images.map((img, imgIndex) => ({ src: img, alt: `Imagem ${imgIndex + 1} do post: ${post.title}` }))}>
                       {post.body}
                     </Markdown>

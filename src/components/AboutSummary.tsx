@@ -1,22 +1,17 @@
 'use client';
 
-import EditSiteContentButton from '@/admin/EditSiteContentButton';
 import Markdown from '@/components/Markdown';
-import {
-  PERMLINK_ABOUT_SUMMARY,
-  fetchPostBody,
-} from '@/lib/hive/site-content';
 import { splitMarkdownSections } from '@/utility/markdown-sections';
-import { useEffect, useState } from 'react';
 
 /**
  * Resumo da seção "sobre".
  *
  * O texto abaixo é o padrão que vai no HTML do servidor — bom para SEO e para
  * a página não ficar vazia se o Hive falhar. Se o artista tiver publicado uma
- * versão própria, ela substitui isto depois da hidratação.
+ * versão própria (lida pela página com useSitePost), ela substitui isto
+ * depois da hidratação.
  */
-const FALLBACK_MARKDOWN = [
+export const ABOUT_SUMMARY_FALLBACK = [
   '## Wilbor Studio',
   '',
   'Estúdio de criação multimídia fundado por Wilson Domingues em 2010, com ' +
@@ -36,24 +31,16 @@ const FALLBACK_MARKDOWN = [
   'Nova Iorque, na Alemanha, na Romênia e na China.',
 ].join('\n');
 
-export default function AboutSummary() {
-  const [markdown, setMarkdown] = useState(FALLBACK_MARKDOWN);
-  const [published, setPublished] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    fetchPostBody(PERMLINK_ABOUT_SUMMARY).then(body => {
-      if (!active || !body) return;
-      setPublished(body);
-      setMarkdown(body);
-    });
-    return () => { active = false; };
-  }, []);
-
-  const { sections } = splitMarkdownSections(markdown);
+export default function AboutSummary({
+  markdown,
+}: {
+  /** Versão publicada no Hive; sem ela, vale o texto padrão acima. */
+  markdown?: string | null
+}) {
+  const { sections } = splitMarkdownSections(markdown || ABOUT_SUMMARY_FALLBACK);
 
   return (
-    <div className="mb-8 sm:mb-10">
+    <div className="mb-4 sm:mb-6">
       <div className="space-y-5 sm:space-y-6">
         {sections.map(({ title, content }) => (
           <section
@@ -76,16 +63,6 @@ export default function AboutSummary() {
             </div>
           </section>
         ))}
-      </div>
-
-      <div className="mt-3">
-        <EditSiteContentButton
-          permlink={PERMLINK_ABOUT_SUMMARY}
-          title="resumo sobre"
-          currentMarkdown={published}
-          fallbackMarkdown={FALLBACK_MARKDOWN}
-          label="editar resumo"
-        />
       </div>
     </div>
   );
