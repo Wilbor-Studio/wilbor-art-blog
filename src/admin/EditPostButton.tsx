@@ -31,7 +31,10 @@ const DEFAULT_CLASS =
 
 /** Estilo para seções de texto (sobre, exposições, parceiros, contato). */
 export const SECTION_EDIT_CLASS =
-  'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono ' +
+  // nowrap/shrink-0: espremido ao lado de um texto, "editar rodapé"
+  // quebrava em duas linhas.
+  'inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full ' +
+  'border px-2.5 py-1 font-mono ' +
   'text-[11px] transition border-neutral-400 bg-white/80 text-neutral-700 ' +
   'hover:border-black hover:text-black dark:border-neutral-600 ' +
   'dark:bg-black/70 dark:text-neutral-200 dark:hover:border-white ' +
