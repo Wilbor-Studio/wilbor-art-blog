@@ -13,7 +13,7 @@ import { useSitePost } from '@/lib/hive/useSitePost';
  * Ponto de partida do editor na primeira vez. Link sozinho numa linha vira
  * player ao publicar (Spotify, SoundCloud, YouTube, Vimeo).
  */
-const STARTER_MARKDOWN = [
+export const STARTER_MARKDOWN = [
   'Escreva aqui uma apresentação curta, se quiser.',
   '',
   'Cole cada link numa linha sozinha — ele vira player ao publicar:',
@@ -28,18 +28,33 @@ const STARTER_MARKDOWN = [
  * Sobre. Enquanto o post não existe, quem visita não vê a seção; o artista
  * logado vê um convite para criá-la.
  */
-export function useHasSoundSection() {
+/**
+ * Corpo publicado da seção, ou null. Um post que ainda é só o texto-modelo
+ * do editor (publicado sem editar) conta como não publicado: senão as
+ * instruções "Escreva aqui…" apareceriam para quem visita.
+ */
+export function publishedSoundBody(body: string | null | undefined) {
+  if (!body?.trim()) return null;
+  return body.trim() === STARTER_MARKDOWN.trim() ? null : body;
+}
+
+function usePublishedSound() {
   const { body, loaded } = useSitePost(PERMLINK_SOUND);
-  return loaded && Boolean(body);
+  return { body, published: publishedSoundBody(body), loaded };
+}
+
+export function useHasSoundSection() {
+  const { published, loaded } = usePublishedSound();
+  return loaded && Boolean(published);
 }
 
 export default function SoundContent() {
   const siteConfig = useSiteConfig();
   const { isAdmin, isReady } = useHiveAuth();
-  const { body, loaded } = useSitePost(PERMLINK_SOUND);
+  const { body, published, loaded } = usePublishedSound();
 
   if (!loaded) return null;
-  if (!body && !(isReady && isAdmin)) return null;
+  if (!published && !(isReady && isAdmin)) return null;
 
   const title = siteConfig.sectionTitles.sound;
 
@@ -53,7 +68,7 @@ export default function SoundContent() {
     <div className="max-w-6xl mx-auto">
     <div className={TEXT_SECTION_SHELL}>
       <div className={TEXT_SECTION_INNER}>
-        {body ? (
+        {published ? (
           <CollapsibleSection
             size="title"
             label={title}
@@ -62,13 +77,13 @@ export default function SoundContent() {
               <EditSiteContentButton
                 permlink={PERMLINK_SOUND}
                 title="bota o som"
-                currentMarkdown={body}
+                currentMarkdown={published}
                 fallbackMarkdown={STARTER_MARKDOWN}
               />
             }
           >
             {/* Mesma cor de texto das outras seções (Sobre, Parceiros). */}
-            <Markdown>{body}</Markdown>
+            <Markdown>{published}</Markdown>
           </CollapsibleSection>
         ) : (
           // Só o artista chega aqui: a seção ainda não foi publicada.
@@ -79,7 +94,9 @@ export default function SoundContent() {
             <EditSiteContentButton
               permlink={PERMLINK_SOUND}
               title="bota o som"
-              currentMarkdown={null}
+              // Se o modelo já foi publicado, o editor abre nele (modo
+              // editar); senão, cria o post.
+              currentMarkdown={body}
               fallbackMarkdown={STARTER_MARKDOWN}
               label="criar seção"
             />
