@@ -1,5 +1,6 @@
 import { getPostsByAuthor } from '@/lib/hive/hive-client';
 import { isBlockedPermlink } from '@/lib/hive/blocked-posts';
+import { CONTROL_TAGS, isSiteContentPost } from '@/lib/hive/control-tags';
 import { MarkdownRenderer } from '@/lib/markdown/MarkdownRenderer';
 import { Photo } from '@/photo/components/types';
 import { Discussion } from '@hiveio/dhive';
@@ -50,7 +51,10 @@ export async function getHivePosts(username: string) {
       return await getPostsByAuthor(username);
     });
 
-    const visiblePosts = posts.filter(post => !isBlockedPermlink(post.permlink));
+    // Conteúdo de seção (rodapé, contato…) não é projeto: fica fora da grade
+    // para todo mundo, inclusive o artista, que o edita na própria seção.
+    const visiblePosts = posts.filter(post =>
+      !isBlockedPermlink(post.permlink) && !isSiteContentPost(post));
     
     const formattedPosts = visiblePosts.flatMap(post => {
       // Posts marcados como escondidos ou em destaque continuam vindo daqui,
@@ -178,11 +182,7 @@ export async function getHivePosts(username: string) {
 export type Tag = { tag: string; count: number };
 export type Tags = Tag[];
 
-/**
- * Tags que controlam o comportamento do site e não são assunto de projeto.
- * Nunca devem aparecer como filtro no menu.
- */
-export const CONTROL_TAGS = new Set(['hidden', 'destaque', 'site']);
+export { CONTROL_TAGS };
 
 export function extractAndCountTags(
   posts: Discussion[],

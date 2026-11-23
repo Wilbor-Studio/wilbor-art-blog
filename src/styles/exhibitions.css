@@ -71,8 +71,10 @@
 
   /* ---- Cada exposição ------------------------------------------------- */
 
+  /* Subtítulo de cada entrada: bem abaixo do título da seção (que
+     renderiza com 20px), para não competir com ele. */
   .markdown-content-custom.exhibition-content h2 {
-    font-size: 1.2rem !important;
+    font-size: 0.95rem !important;
     font-weight: 700;
     line-height: 1.3 !important;
     margin: 2.25rem 0 0.6rem !important;
@@ -89,7 +91,7 @@
   .markdown-content-custom.exhibition-content h4,
   .markdown-content-custom.exhibition-content h5,
   .markdown-content-custom.exhibition-content h6 {
-    font-size: 1rem !important;
+    font-size: 0.9rem !important;
     font-weight: 600;
     line-height: 1.3 !important;
     margin: 1rem 0 0.3rem !important;
@@ -134,7 +136,67 @@
     }
 
     .markdown-content-custom.exhibition-content h2 {
-      font-size: 1.35rem !important;
+      font-size: 1rem !important;
     }
   }
+}
+
+/*
+ * Fundos das seções de texto da landing, em degraus iguais: Sobre é a mais
+ * escura e cada seção abaixo fica um tom mais clara (Exposições →
+ * Publicações → Bota o som → Parceiros). Ficam juntos aqui para a escala ser ajustada
+ * num lugar só. Publicações é uma faixa dentro de Exposições
+ * (.publications-band, logo abaixo).
+ */
+:root {
+  --tone-about: #e2e2e2;
+  --tone-exhibitions: #e8e8e8;
+  --tone-publications: #eeeeee;
+  --tone-sound: #f4f4f4;
+  --tone-partners: #fafafa;
+}
+
+.dark {
+  --tone-about: #121212;
+  --tone-exhibitions: #191919;
+  --tone-publications: #202020;
+  --tone-sound: #272727;
+  --tone-partners: #2e2e2e;
+}
+
+/*
+ * Faixa de fundo de Publicações, dentro da seção de Exposições. O conteúdo
+ * fica na coluna centralizada, mas o fundo vai de borda a borda da tela:
+ * o box-shadow estende a cor para os lados e para baixo, e o clip-path
+ * corta só o que subiria. Para baixo, quem corta é a própria seção
+ * (overflow-hidden em #exhibitions), assim a faixa chega até o fim dela
+ * sem sobrar uma tira do cinza de Exposições.
+ */
+.publications-band {
+  --band-bg: var(--tone-publications);
+  --band-rule: rgb(229 229 229 / 0.4);
+
+  background: var(--band-bg);
+  box-shadow: 0 0 0 100vmax var(--band-bg);
+  clip-path: inset(0 -100vmax -100vmax);
+  border-top: 1px solid var(--band-rule);
+  /*
+   * Fechada, a faixa fica simétrica: em cima, o mesmo padding que a seção
+   * dá embaixo (TEXT_SECTION_SHELL: py-3 / sm:py-4), que a faixa cobre ao
+   * descer até o fim da seção. A margem repete o respiro de cima de
+   * Exposições, para os dois títulos terem a mesma altura.
+   */
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .publications-band {
+    margin-top: 1rem;
+    padding-top: 1rem;
+  }
+}
+
+.dark .publications-band {
+  --band-rule: rgb(38 38 38 / 0.7);
 }

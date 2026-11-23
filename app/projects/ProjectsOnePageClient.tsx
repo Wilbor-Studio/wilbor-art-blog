@@ -5,6 +5,7 @@ import About from '@/app/about/page';
 import { PATH_GRID } from '@/app/paths';
 import ExhibitionsContent from '@/components/ExhibitionsContent';
 import PartnersContent from '@/components/PartnersContent';
+import SoundContent from '@/components/SoundContent';
 import ScrollReveal from '@/components/ScrollReveal';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { memo, useCallback, useEffect, useState } from 'react';
@@ -118,13 +119,17 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const sections = Array.from(document.querySelectorAll<HTMLElement>('section[id]'));
-    if (sections.length === 0) return;
+    // A lista é lida a cada atualização: "Bota o som" só entra na página
+    // depois que o post chega do Hive, e o contato é o <footer id="contact">.
+    const getSections = () => Array.from(
+      document.querySelectorAll<HTMLElement>('section[id], footer[id]'),
+    );
 
     let ticking = false;
 
     const updateActiveSection = () => {
       ticking = false;
+      const sections = getSections();
       const viewportCenter = window.innerHeight / 2;
       const viewportTop = 0;
       const viewportBottom = window.innerHeight;
@@ -209,7 +214,7 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
         </section>
 
         {/* ABOUT COMO SEÇÃO DA LANDING */}
-        <section id="about" className="w-full bg-neutral-50 dark:bg-neutral-900 border-t border-neutral-200/40 dark:border-neutral-800/70">
+        <section id="about" className="w-full bg-[var(--tone-about)] border-t border-neutral-200/40 dark:border-neutral-800/70">
           <div className="max-w-6xl mx-auto">
             <ScrollReveal forceMount>
               <MemoizedAbout />
@@ -218,7 +223,7 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
         </section>
 
         {/* EXHIBITIONS COMO SEÇÃO DA LANDING */}
-        <section id="exhibitions" className="w-full bg-gray-100 dark:bg-neutral-800 border-t border-neutral-200/40 dark:border-neutral-800/70">
+        <section id="exhibitions" className="w-full overflow-hidden bg-[var(--tone-exhibitions)] border-t border-neutral-200/40 dark:border-neutral-800/70">
           <div className="max-w-6xl mx-auto">
             <ScrollReveal forceMount>
               <MemoizedExhibitionsContent />
@@ -226,8 +231,11 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
           </div>
         </section>
 
+        {/* BOTA O SOM: só aparece depois que o artista publica a seção */}
+        <SoundContent />
+
         {/* PARTNERS COMO SEÇÃO DA LANDING */}
-        <section id="partners" className="w-full bg-slate-100 dark:bg-neutral-700 border-t border-neutral-200/40 dark:border-neutral-800/70">
+        <section id="partners" className="w-full bg-[var(--tone-partners)] border-t border-neutral-200/40 dark:border-neutral-800/70">
           <div className="max-w-6xl mx-auto">
             <ScrollReveal forceMount>
               <MemoizedPartnersContent />

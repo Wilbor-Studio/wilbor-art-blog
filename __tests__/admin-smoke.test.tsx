@@ -149,3 +149,56 @@ describe('área do artista', () => {
     expect(localStorage.getItem('wilbor_admin_username')).toBeNull();
   });
 });
+
+describe('menu do artista no card de projeto', () => {
+  /* eslint-disable @typescript-eslint/no-var-requires */
+  const ProjectAdminMenu = require('../src/admin/ProjectAdminMenu').default;
+
+  beforeEach(() => localStorage.clear());
+
+  function renderCard(onCardClick: jest.Mock, isHidden = false) {
+    return render(
+      <HiveAuthProvider>
+        <div onClick={onCardClick} className="group">
+          <ProjectAdminMenu variant="card" post={POST} isHidden={isHidden} />
+        </div>
+      </HiveAuthProvider>,
+    );
+  }
+
+  it('não aparece para visitante', async () => {
+    renderCard(jest.fn());
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Opções do projeto')).not.toBeInTheDocument();
+    });
+  });
+
+  it('abre o menu e o editor sem acionar o card por baixo', async () => {
+    setSession(OWNER);
+    const onCardClick = jest.fn();
+    renderCard(onCardClick);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Opções do projeto' }));
+    expect(await screen.findByRole('menuitem', { name: /Editar projeto/ }))
+      .toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: /Esconder do site/ }))
+      .toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('menuitem', { name: /Editar projeto/ }));
+    const dialog = await screen.findByRole('dialog', { name: /editar projeto/i });
+    fireEvent.click(dialog);
+    fireEvent.click(screen.getByText('Cancelar'));
+
+    expect(onCardClick).not.toHaveBeenCalled();
+  });
+
+  it('projeto oculto mostra o selo e oferece trazer de volta', async () => {
+    setSession(OWNER);
+    renderCard(jest.fn(), true);
+
+    expect(await screen.findByText('oculto · só você vê')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Opções do projeto' }));
+    expect(await screen.findByRole('menuitem', { name: /Mostrar no site/ }))
+      .toBeInTheDocument();
+  });
+});

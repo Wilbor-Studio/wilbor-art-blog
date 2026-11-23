@@ -2,6 +2,7 @@ import ReactMarkdown, { type Components } from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import ImageCarousel from './ImageCarousel';
+import { EXHIBITION_DATE_PATTERN } from '@/utility/exhibition-markdown';
 
 interface MarkdownProps {
     children: string;
@@ -14,7 +15,6 @@ interface MarkdownProps {
     hasLittleContent?: boolean;
 }
 
-const EXHIBITION_DATE_PATTERN = /^(\d{2}\/\d{2}\/\d{4}|\d{1,2}\/\d{4}|\d{4}(?:\s*[–-]\s*\d{4})?)$/;
 
 function removeImagesAndVideosFromMarkdown(markdown: string): string {
     let result = markdown.replace(/!\[[^\]]*\]\([^\)]+\)/g, '');
@@ -111,6 +111,19 @@ function splitMarkdownWithImageBlocks(markdown: string) {
     pushMarkdownBlock();
     pushCarouselBlock();
     return blocks;
+}
+
+/** Altura do player de áudio pelo endereço do embed, ou null se não for áudio. */
+function getAudioEmbedHeight(src: string): number | null {
+    const spotify = src.match(/open\.spotify\.com\/embed\/(\w+)/);
+    if (spotify) {
+        // Faixa e episódio cabem no player compacto; listas pedem espaço.
+        return ['track', 'episode'].includes(spotify[1]) ? 152 : 352;
+    }
+    if (src.includes('w.soundcloud.com/player')) {
+        return decodeURIComponent(src).includes('/sets/') ? 450 : 166;
+    }
+    return null;
 }
 
 export default function Markdown({ children, className = '', removeMedia = false, images, videoPoster, columns = false, inExpandedCard = false, hasLittleContent = false }: MarkdownProps) {
@@ -361,6 +374,22 @@ export default function Markdown({ children, className = '', removeMedia = false
             );
         },
         iframe: (props: any) => {
+            // Players de áudio (Spotify, SoundCloud) têm altura fixa: na caixa
+            // 16:9 preta dos vídeos eles ficariam com uma faixa vazia enorme.
+            const audioHeight = getAudioEmbedHeight(String(props.src || ''));
+            if (audioHeight) {
+                return (
+                    <iframe
+                        src={props.src}
+                        allow={props.allow}
+                        loading="lazy"
+                        title={props.title || 'Player de música'}
+                        className="my-3 block w-full rounded-xl"
+                        style={{ height: audioHeight, border: 0 }}
+                    />
+                );
+            }
+
             const styleProp = props.style as unknown;
             const styleStr = typeof styleProp === 'string' ? styleProp.replace(/\s+/g, '').toLowerCase() : '';
             const isAbsolute =

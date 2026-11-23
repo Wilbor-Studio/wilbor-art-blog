@@ -15,6 +15,7 @@ export default function CollapsibleSection({
   badge,
   count,
   size = 'default',
+  action,
 }: {
   children: React.ReactNode
   label: string
@@ -24,12 +25,18 @@ export default function CollapsibleSection({
   count?: number
   /** 'title' usa o tamanho dos títulos de seção; 'default' é o rótulo menor. */
   size?: 'default' | 'title'
+  /**
+   * Ação ao lado do título (ex.: o "editar" do artista). Fica fora do botão
+   * que abre e fecha, então tocar nela não mexe no acordeão.
+   */
+  action?: React.ReactNode
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const contentId = useId();
 
   return (
     <div>
+      <div className="flex items-center gap-3">
       <button
         type="button"
         onClick={() => setIsOpen(open => !open)}
@@ -41,7 +48,7 @@ export default function CollapsibleSection({
           // gatilho ocupa a largura toda, e essa caixa vira linhas azuladas
           // atravessando a seção — por isso o cromo é zerado explicitamente.
           'border-0 bg-transparent shadow-none rounded-none px-0',
-          'group flex items-center gap-3 w-full text-left',
+          'group flex flex-1 min-w-0 items-center gap-3 text-left',
           'py-4 sm:py-5 transition-colors',
           'text-neutral-500 dark:text-neutral-400',
           'hover:text-neutral-900 dark:hover:text-neutral-100',
@@ -81,7 +88,8 @@ export default function CollapsibleSection({
         <svg
           className={[
             'ml-auto h-5 w-5 shrink-0 transition-transform duration-200',
-            isOpen ? 'rotate-180' : '',
+            // Fechado aponta para o rótulo (esquerda); aberto, para o conteúdo.
+            isOpen ? '' : 'rotate-90',
           ].join(' ')}
           fill="none"
           viewBox="0 0 24 24"
@@ -96,6 +104,8 @@ export default function CollapsibleSection({
           />
         </svg>
       </button>
+      {action && <div className="shrink-0">{action}</div>}
+      </div>
 
       {isOpen && (
         <div id={contentId} className="pb-5 animate-fade-in">

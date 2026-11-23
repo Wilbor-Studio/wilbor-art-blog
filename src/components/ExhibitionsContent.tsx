@@ -1,9 +1,10 @@
 'use client';
 
-import { getPostsByBlog, getUserAccount } from "@/../lib/hive/hive-client";
+import { getAllPostsByBlog, getUserAccount } from "@/../lib/hive/hive-client";
 import EditPostButton, { SECTION_EDIT_CLASS } from '@/admin/EditPostButton';
 import Markdown from "@/components/Markdown";
 import CollapsibleSection from '@/components/CollapsibleSection';
+import { TEXT_SECTION_INNER, TEXT_SECTION_SHELL } from '@/components/textSection';
 import { normalizeExhibitionMarkdown, splitExhibitionSections } from '@/utility/exhibition-markdown';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
@@ -86,7 +87,7 @@ function useDynamicExhibitionsPost(username: string) {
         }
 
         console.log(`Usuário ${username} encontrado, buscando posts...`);
-        const allPosts = await getPostsByBlog(username);
+        const allPosts = await getAllPostsByBlog(username);
         console.log(`Total de posts encontrados: ${allPosts.length}`);
         console.log('Títulos dos posts:', allPosts.map((p: any) => p.title));
 
@@ -124,20 +125,14 @@ export default function ExhibitionsContent() {
   }
 
   return (
-    <div className="w-full px-4 sm:px-8 md:px-12 py-6 sm:py-8 dark:text-gray-200 text-left">
-      <div className="w-full max-w-4xl mx-auto text-left space-y-4 sm:space-y-3">
-        <div className="space-y-3">
+    <div className={TEXT_SECTION_SHELL}>
+      <div className={TEXT_SECTION_INNER}>
+        <div>
           {hivePosts.map((post, index) => {
             const media = extractMediaFromPost(post);
             return (
-              <article key={post.permlink} className="mb-4 sm:mb-6 py-2 sm:py-3">
+              <article key={post.permlink}>
                 <div className="space-y-1 sm:space-y-0">
-                  <EditPostButton
-                    post={post}
-                    label="editar exposição"
-                    stopPropagation={false}
-                    className={`mb-2 ${SECTION_EDIT_CLASS}`}
-                  />
                   {media.images.length > 0 && (
                     <div className="w-full mb-2">
                       {media.images.length === 1 ? (
@@ -203,16 +198,33 @@ export default function ExhibitionsContent() {
                         {section.body}
                       </Markdown>
                     ) : (
-                      <CollapsibleSection
+                      <div
                         key={sectionIndex}
-                        size="title"
-                        label={section.title}
-                        labelOpen={section.title}
+                        // Publicações ganham uma faixa de fundo própria, como
+                        // a troca de cor entre as seções da página.
+                        className={/publica/i.test(section.title)
+                          ? 'publications-band'
+                          : undefined}
                       >
-                        <Markdown className="exhibition-content" removeMedia>
-                          {section.body}
-                        </Markdown>
-                      </CollapsibleSection>
+                        <CollapsibleSection
+                          size="title"
+                          label={section.title}
+                          labelOpen={section.title}
+                          // Exposições e Publicações moram no mesmo post:
+                          // os dois "editar" abrem o mesmo texto.
+                          action={
+                            <EditPostButton
+                              post={post}
+                              stopPropagation={false}
+                              className={SECTION_EDIT_CLASS}
+                            />
+                          }
+                        >
+                          <Markdown className="exhibition-content" removeMedia>
+                            {section.body}
+                          </Markdown>
+                        </CollapsibleSection>
+                      </div>
                     )
                   )}
                   {index < hivePosts.length - 1 && (

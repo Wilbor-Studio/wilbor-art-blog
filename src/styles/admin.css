@@ -26,3 +26,22 @@
     min-height: 0;
   }
 }
+
+/*
+ * Fundo do editor. Em tela cheia (celular) o modal encosta nas bordas e só
+ * respeita as áreas seguras; a partir de sm ele flutua com uma margem que
+ * nunca fica menor que a área segura — no iPad deitado, a altura de 100vh
+ * passa da área visível do Safari, então o tamanho sai do dvh.
+ */
+.wilbor-editor-backdrop {
+  height: 100dvh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+@media (min-width: 640px) {
+  .wilbor-editor-backdrop {
+    padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+      max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  }
+}

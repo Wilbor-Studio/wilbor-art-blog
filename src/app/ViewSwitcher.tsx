@@ -4,11 +4,12 @@ import {
 } from '@/app/paths';
 import BannerWilborSwitcher from '@/components/BannerWilborSwitcher';
 import { useTheme } from 'next-themes';
+import { useHasSoundSection } from '@/components/SoundContent';
 import { useEffect, useState } from 'react';
 import DrawerTagsDesktop from '../../app/projects/DrawerTagsDesktop';
 import DrawerTagsMobile from '../../app/projects/DrawerTagsMobile';
 
-export type SwitcherSelection = 'projects' | 'about' | 'exhibitions' | 'partners' | 'contact';
+export type SwitcherSelection = 'projects' | 'about' | 'exhibitions' | 'som' | 'partners' | 'contact';
 
 export default function ViewSwitcher({
   currentSelection,
@@ -80,6 +81,7 @@ export default function ViewSwitcher({
     }
   }, [drawerTagsProps?.tags]);
 
+  const hasSoundSection = useHasSoundSection();
   const menuItems = [
     {
       text: "PROJETOS",
@@ -99,6 +101,13 @@ export default function ViewSwitcher({
       href: `${PATH_GRID}#exhibitions`,
       active: currentSelection === 'exhibitions',
     },
+    // Só entra no menu depois que o artista publica a seção.
+    ...hasSoundSection ? [{
+      text: "BOTA O SOM",
+      mobileText: "BOTA O SOM",
+      href: `${PATH_GRID}#som`,
+      active: currentSelection === 'som',
+    }] : [],
     {
       text: "PARCEIROS",
       mobileText: "PARCEIROS",

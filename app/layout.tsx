@@ -6,7 +6,6 @@ import { fetchSiteConfig } from '@/lib/hive/site-content';
 import AdminBar from '@/admin/AdminBar';
 import HiveAuthProvider from '@/admin/HiveAuthProvider';
 import Footer from '@/app/Footer';
-import ContactContent from '@/components/ContactContent';
 import ToasterWithThemes from '@/toast/ToasterWithThemes';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
@@ -111,9 +110,6 @@ export default function RootLayout({
                 <div >
                   {children}
                 </div>
-                <section id="contact">
-                  <ContactContent />
-                </section>
                 <Footer />
               </main>
               {/* <CommandK /> */}

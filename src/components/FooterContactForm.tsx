@@ -18,8 +18,17 @@ const SUBJECT = 'Contato pelo site — Wilbor Studio';
  */
 export default function FooterContactForm({
   targets,
+  className = 'mx-auto w-full max-w-sm px-4 pt-6',
+  showLabel = true,
 }: {
   targets: ContactTargets
+  /** Largura e posição da caixa; o rodapé decide onde ela fica. */
+  className?: string
+  /**
+   * Rótulo visível "Fale com o estúdio". Quem já mostra um título próprio
+   * passa false, e o rótulo fica só para leitores de tela.
+   */
+  showLabel?: boolean
 }) {
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
@@ -47,20 +56,24 @@ export default function FooterContactForm({
     'dark:hover:border-neutral-100 dark:hover:text-neutral-100',
   ].join(' ');
 
+  // Antes da mensagem os botões ficam legíveis, só sem ação: apagados demais
+  // eles pareciam quebrados.
   const disabled = [
-    'pointer-events-none opacity-40',
-    'border-neutral-300 text-neutral-500',
-    'dark:border-neutral-800 dark:text-neutral-600',
+    'pointer-events-none',
+    'border-neutral-300 text-neutral-400',
+    'dark:border-neutral-800 dark:text-neutral-500',
   ].join(' ');
 
   return (
-    <div className="mx-auto w-full max-w-sm px-4 pt-6 text-left">
+    <div className={`${className} text-left`}>
       <label
         htmlFor="footer-message"
-        className={[
-          'block font-mono text-[10px] uppercase tracking-[0.18em]',
-          'text-neutral-500 dark:text-neutral-400 mb-2',
-        ].join(' ')}
+        className={showLabel
+          ? [
+            'block font-mono text-[10px] uppercase tracking-[0.18em]',
+            'text-neutral-500 dark:text-neutral-400 mb-2',
+          ].join(' ')
+          : 'sr-only'}
       >
         Fale com o estúdio
       </label>
@@ -73,8 +86,8 @@ export default function FooterContactForm({
         aria-label="Seu nome"
         className={[
           'mb-2 w-full rounded-md px-3 py-2 text-sm',
-          'border bg-transparent',
-          'border-neutral-300 dark:border-neutral-700',
+          'border bg-white/70 dark:bg-neutral-950',
+          'border-neutral-300 dark:border-neutral-800',
           'placeholder:text-neutral-400 dark:placeholder:text-neutral-600',
           'focus:outline-none focus:ring-1',
           'focus:ring-neutral-400 dark:focus:ring-neutral-500',
@@ -89,8 +102,8 @@ export default function FooterContactForm({
         placeholder="Escreva sua mensagem…"
         className={[
           'mb-3 w-full resize-y rounded-md px-3 py-2 text-sm',
-          'border bg-transparent',
-          'border-neutral-300 dark:border-neutral-700',
+          'border bg-white/70 dark:bg-neutral-950',
+          'border-neutral-300 dark:border-neutral-800',
           'placeholder:text-neutral-400 dark:placeholder:text-neutral-600',
           'focus:outline-none focus:ring-1',
           'focus:ring-neutral-400 dark:focus:ring-neutral-500',
@@ -124,7 +137,9 @@ export default function FooterContactForm({
       </div>
 
       <p className="mt-2 text-[10px] text-neutral-400 dark:text-neutral-600">
-        Abre o WhatsApp ou seu app de e-mail com a mensagem pronta.
+        {hasMessage
+          ? 'Abre o WhatsApp ou seu app de e-mail com a mensagem pronta.'
+          : 'Escreva a mensagem e escolha por onde enviar.'}
       </p>
     </div>
   );

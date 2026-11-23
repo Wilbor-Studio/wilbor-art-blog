@@ -1,8 +1,9 @@
 'use client';
 
-import { getPostsByBlog, getUserAccount } from "@/../lib/hive/hive-client";
+import { getAllPostsByBlog, getUserAccount } from "@/../lib/hive/hive-client";
 import EditPostButton, { SECTION_EDIT_CLASS } from '@/admin/EditPostButton';
 import CollapsibleSection from '@/components/CollapsibleSection';
+import { TEXT_SECTION_INNER, TEXT_SECTION_SHELL } from '@/components/textSection';
 import Markdown from "@/components/Markdown";
 import { useSiteConfig } from '@/lib/hive/useSiteConfig';
 import { splitMarkdownSections } from '@/utility/markdown-sections';
@@ -90,7 +91,7 @@ function useDynamicPartnersPost(username: string) {
         }
 
         console.log(`Usuário ${username} encontrado, buscando posts...`);
-        const allPosts = await getPostsByBlog(username);
+        const allPosts = await getAllPostsByBlog(username);
         console.log(`Total de posts encontrados: ${allPosts.length}`);
 
         const matchingPosts = allPosts.filter((post: any) =>
@@ -158,33 +159,38 @@ export default function PartnersContent() {
   const { posts: hivePosts, loading, error } = useDynamicPartnersPost(process.env.NEXT_PUBLIC_HIVE_USERNAME || '');
 
   return (
-      <div className="w-full px-4 sm:px-8 md:px-12 py-6 sm:py-8 dark:text-gray-200 text-left">
-        <div className="w-full max-w-4xl mx-auto text-left space-y-2 sm:space-y-3">
-          {/* Título da seção: o post do Hive começa direto na primeira
-              categoria, sem dizer de que parte do site se trata. */}
-          <h2
-            className={[
-              // Mesmo tamanho dos outros títulos de seção (Sobre, Exposições).
-              'font-mono text-2xl font-extrabold uppercase tracking-[0.02em] leading-tight',
-              'text-gray-900 dark:text-gray-100',
-              'pb-2 mb-4 sm:mb-6',
-            ].join(' ')}
+      <div className={TEXT_SECTION_SHELL}>
+        <div className={TEXT_SECTION_INNER}>
+          {/* Fechada, a seção é só o título (o post do Hive começa direto
+              na primeira categoria, sem dizer de que parte do site se
+              trata). Aberta, mostra as categorias como subseções. */}
+          <CollapsibleSection
+            size="title"
+            label={siteConfig.sectionTitles.partners}
+            labelOpen={siteConfig.sectionTitles.partners}
+            action={!loading && !error && hivePosts[0] && (
+              <EditPostButton
+                post={hivePosts[0]}
+                stopPropagation={false}
+                className={SECTION_EDIT_CLASS}
+              />
+            )}
           >
-            {siteConfig.sectionTitles.partners}
-          </h2>
           {!loading && !error && hivePosts.length > 0 && (
-            <div className="space-y-3 mb-8">
+            <div>
               {hivePosts.map((post, index) => {
                 const media = extractMediaFromPost(post);
                 return (
-                  <article key={post.permlink} className="mb-6 py-3">
+                  <article key={post.permlink}>
                     <div className="space-y-0">
-                      <EditPostButton
-                        post={post}
-                        label="editar parceiros"
-                        stopPropagation={false}
-                        className={`mb-2 ${SECTION_EDIT_CLASS}`}
-                      />
+                      {/* O primeiro post se edita pelo título da seção. */}
+                      {index > 0 && (
+                        <EditPostButton
+                          post={post}
+                          stopPropagation={false}
+                          className={`mb-2 ${SECTION_EDIT_CLASS}`}
+                        />
+                      )}
                       {media.images.length > 0 && (
                         <div className="w-full mb-2">
                           {media.images.length === 1 ? (
@@ -254,6 +260,7 @@ export default function PartnersContent() {
               })}
             </div>
           )}
+          </CollapsibleSection>
         </div>
       </div>
   );

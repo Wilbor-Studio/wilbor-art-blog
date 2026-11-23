@@ -1,8 +1,7 @@
 'use client';
 
-import EditPostButton from '@/admin/EditPostButton';
 import { useHiveAuth } from '@/admin/HiveAuthProvider';
-import ProjectFlagsButtons from '@/admin/ProjectFlagsButtons';
+import ProjectAdminMenu from '@/admin/ProjectAdminMenu';
 import { IconX } from '@/components/IconX';
 import ImageCarousel from '@/components/ImageCarousel';
 import Markdown from '@/components/Markdown';
@@ -518,36 +517,21 @@ const MediaItem = ({
                 if (!isExpanded) onExpand();
             }}
         >
-            {/* Controles do artista logado — invisíveis para o público */}
-            {mainItem.hiveMetadata && (
-                <div className="absolute top-2 right-2 z-30 flex flex-col items-end gap-1">
-                    <EditPostButton
-                        post={{
-                            title: mainItem.title,
-                            body: mainItem.hiveMetadata.body,
-                            author: mainItem.hiveMetadata.author,
-                            permlink: mainItem.hiveMetadata.permlink,
-                            json_metadata: mainItem.hiveMetadata.json_metadata,
-                        }}
-                        fallbackTitle={mainItem.title}
-                    />
-                    <ProjectFlagsButtons
-                        author={mainItem.hiveMetadata.author}
-                        permlink={mainItem.hiveMetadata.permlink}
-                        title={mainItem.title || ''}
-                        body={mainItem.hiveMetadata.body}
-                        jsonMetadata={mainItem.hiveMetadata.json_metadata}
-                        isHidden={mainItem.isHidden}
-                        isFeatured={mainItem.isFeatured}
-                    />
-                </div>
-            )}
-
-            {/* Aviso de que este card não aparece para quem visita */}
-            {mainItem.isHidden && (
-                <div className="absolute top-2 left-2 z-30 rounded-full bg-amber-500/90 px-2 py-0.5 font-mono text-[10px] text-black">
-                    oculto do site
-                </div>
+            {/* Controles do artista no card fechado — invisíveis para o
+                público. Aberto, eles vão para a linha do título. */}
+            {mainItem.hiveMetadata && !isExpanded && (
+                <ProjectAdminMenu
+                    variant="card"
+                    post={{
+                        title: mainItem.title,
+                        body: mainItem.hiveMetadata.body,
+                        author: mainItem.hiveMetadata.author,
+                        permlink: mainItem.hiveMetadata.permlink,
+                        json_metadata: mainItem.hiveMetadata.json_metadata,
+                    }}
+                    isHidden={mainItem.isHidden}
+                    isFeatured={mainItem.isFeatured}
+                />
             )}
             <div className={clsx(
                 'w-full',
@@ -713,6 +697,20 @@ const MediaItem = ({
                                 {mainItem.title}
                             </h2>
                             <div className="flex items-center gap-2">
+                                {mainItem.hiveMetadata && (
+                                    <ProjectAdminMenu
+                                        variant="header"
+                                        post={{
+                                            title: mainItem.title,
+                                            body: mainItem.hiveMetadata.body,
+                                            author: mainItem.hiveMetadata.author,
+                                            permlink: mainItem.hiveMetadata.permlink,
+                                            json_metadata: mainItem.hiveMetadata.json_metadata,
+                                        }}
+                                        isHidden={mainItem.isHidden}
+                                        isFeatured={mainItem.isFeatured}
+                                    />
+                                )}
                                 {/* Botão de compartilhar/copiar link */}
                                 {/* {shareUrl && (
                                     <button

@@ -173,3 +173,79 @@ export async function getUserAccount(username: string) {
     return null;
   }
 }
+const BLOG_PAGE_SIZE = 20; // máximo que a API aceita por chamada
+const BLOG_MAX_PAGES = 10;
+const BLOG_CACHE_MS = 60_000;
+const blogCache = new Map<string, { at: number; promise: Promise<any[]> }>();
+
+/**
+ * Todos os posts publicados pela conta, paginando de 20 em 20 (até 200).
+ *
+ * As seções de texto (Sobre, Exposições, Parceiros, rodapé, contato) acham
+ * o próprio post pelo título. Dois problemas fizeram seções sumirem:
+ *
+ * - só a primeira página era lida, então um post antigo saía da lista
+ *   assim que a conta publicava projetos novos;
+ * - o feed antigo (condenser get_discussions_by_blog) perde entradas: o
+ *   post do Sobre existe e não está oculto, mas não aparece nele.
+ *
+ * Por isso a busca usa bridge.get_account_posts (sort 'posts': só posts da
+ * própria conta, sem reblogs). O formato é normalizado para o do feed
+ * antigo, que o resto do código espera: json_metadata como texto.
+ *
+ * O resultado fica em cache por um minuto: as cinco seções da página fazem
+ * uma busca só, em vez de uma cada.
+ */
+export function getAllPostsByBlog(username: string): Promise<any[]> {
+  const cached = blogCache.get(username);
+  if (cached && Date.now() - cached.at < BLOG_CACHE_MS) return cached.promise;
+
+  const promise = (async () => {
+    const byPermlink = new Map<string, any>();
+    let start: { start_author: string; start_permlink: string } | null = null;
+
+    for (let page = 0; page < BLOG_MAX_PAGES; page++) {
+      const response = await fetchWithTimeout('https://api.hive.blog', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'bridge.get_account_posts',
+          params: {
+            sort: 'posts',
+            account: username,
+            limit: BLOG_PAGE_SIZE,
+            ...start,
+          },
+          id: 1,
+        }),
+      });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+      const data = await response.json();
+      if (data.error) throw new Error(data.error.message || 'Erro na API do Hive');
+      const batch: any[] = data.result || [];
+
+      for (const post of batch) {
+        if (byPermlink.has(post.permlink)) continue;
+        byPermlink.set(post.permlink, {
+          ...post,
+          json_metadata: typeof post.json_metadata === 'string'
+            ? post.json_metadata
+            : JSON.stringify(post.json_metadata ?? {}),
+        });
+      }
+
+      if (batch.length < BLOG_PAGE_SIZE) break;
+      const last = batch[batch.length - 1];
+      start = { start_author: last.author, start_permlink: last.permlink };
+    }
+
+    return Array.from(byPermlink.values());
+  })();
+
+  // Falha não fica em cache: a próxima seção tenta de novo.
+  promise.catch(() => blogCache.delete(username));
+  blogCache.set(username, { at: Date.now(), promise });
+  return promise;
+}

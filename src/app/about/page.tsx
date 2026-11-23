@@ -1,11 +1,15 @@
 /* eslint-disable */
 'use client';
 
-import { getPostsByBlog, getUserAccount } from "@/../lib/hive/hive-client";
+import { getAllPostsByBlog, getUserAccount } from "@/../lib/hive/hive-client";
 import { isBlockedPermlink } from '@/lib/hive/blocked-posts';
 import EditPostButton, { SECTION_EDIT_CLASS } from '@/admin/EditPostButton';
-import AboutSummary from '@/components/AboutSummary';
+import EditSiteContentButton from '@/admin/EditSiteContentButton';
+import AboutSummary, { ABOUT_SUMMARY_FALLBACK } from '@/components/AboutSummary';
+import { PERMLINK_ABOUT_SUMMARY } from '@/lib/hive/site-content';
+import { useSitePost } from '@/lib/hive/useSitePost';
 import CollapsibleSection from '@/components/CollapsibleSection';
+import { TEXT_SECTION_INNER, TEXT_SECTION_SHELL } from '@/components/textSection';
 import Markdown from '@/components/Markdown';
 import { useSiteConfig } from '@/lib/hive/useSiteConfig';
 import { useEffect, useState } from 'react';
@@ -105,7 +109,7 @@ function useDynamicAboutPost(username: string) {
         }
         
         console.log(`Usuário ${username} encontrado, buscando posts...`);
-        const allPosts = await getPostsByBlog(username);
+        const allPosts = await getAllPostsByBlog(username);
         console.log(`Total de posts encontrados: ${allPosts.length}`);
         console.log('Títulos dos posts:', allPosts.map((p: any) => p.title));
         
@@ -136,34 +140,54 @@ export default function About() {
   const { posts: hivePosts, loading, error } = useDynamicAboutPost(
     process.env.NEXT_PUBLIC_HIVE_USERNAME || ''
   );
+  const { body: summaryBody } = useSitePost(PERMLINK_ABOUT_SUMMARY);
 
   return (
-    <div className="w-full px-4 sm:px-8 md:px-12 py-6 sm:py-8 dark:text-gray-200 text-left">
-      <div className="w-full max-w-4xl mx-auto text-left space-y-4 sm:space-y-3">
+    <div className={TEXT_SECTION_SHELL}>
+      <div className={TEXT_SECTION_INNER}>
         {/* Título e resumo são conteúdo do site: ficam de fora do gate do
-            Hive para continuarem aparecendo se o fetch falhar. O título
-            abre e fecha só o resumo; "saber mais" fica sempre visível. */}
+            Hive para continuarem aparecendo se o fetch falhar. Fechada, a
+            seção é só o título; aberta, mostra o resumo e, abaixo dele, a
+            subseção "saber mais sobre a história" (o post longo). */}
         <CollapsibleSection
           size="title"
           label={siteConfig.sectionTitles.about}
           labelOpen={siteConfig.sectionTitles.about}
+          action={
+            <EditSiteContentButton
+              permlink={PERMLINK_ABOUT_SUMMARY}
+              title="resumo sobre"
+              currentMarkdown={summaryBody}
+              fallbackMarkdown={ABOUT_SUMMARY_FALLBACK}
+            />
+          }
         >
-          <AboutSummary />
-        </CollapsibleSection>
+          <AboutSummary markdown={summaryBody} />
 
         {!loading && !error && hivePosts.length > 0 && (
-          <CollapsibleSection size="title" label="saber mais sobre a história">
+          <CollapsibleSection
+            label="saber mais sobre a história"
+            action={
+              <EditPostButton
+                post={hivePosts[0]}
+                stopPropagation={false}
+                className={SECTION_EDIT_CLASS}
+              />
+            }
+          >
             {hivePosts.map((post, index) => {
               const media = extractMediaFromPost(post);
               return (
-                <article key={post.permlink} className="mb-4 sm:mb-6 py-2 sm:py-3">
+                <article key={post.permlink}>
                   <div className="space-y-1 sm:space-y-0">
-                    <EditPostButton
-                      post={post}
-                      label="editar sobre"
-                      stopPropagation={false}
-                      className={`mb-2 ${SECTION_EDIT_CLASS}`}
-                    />
+                    {/* O primeiro post se edita pelo título da seção. */}
+                    {index > 0 && (
+                      <EditPostButton
+                        post={post}
+                        stopPropagation={false}
+                        className={`mb-2 ${SECTION_EDIT_CLASS}`}
+                      />
+                    )}
                     <Markdown images={media.images.map((img, imgIndex) => ({ src: img, alt: `Imagem ${imgIndex + 1} do post: ${post.title}` }))}>
                       {post.body}
                     </Markdown>
@@ -192,6 +216,7 @@ export default function About() {
             })}
           </CollapsibleSection>
         )}
+        </CollapsibleSection>
       </div>
     </div>
   );
