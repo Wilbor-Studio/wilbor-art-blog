@@ -71,8 +71,10 @@
 
   /* ---- Cada exposição ------------------------------------------------- */
 
+  /* Subtítulo de cada entrada: bem abaixo do título da seção (que
+     renderiza com 20px), para não competir com ele. */
   .markdown-content-custom.exhibition-content h2 {
-    font-size: 1.2rem !important;
+    font-size: 0.95rem !important;
     font-weight: 700;
     line-height: 1.3 !important;
     margin: 2.25rem 0 0.6rem !important;
@@ -89,7 +91,7 @@
   .markdown-content-custom.exhibition-content h4,
   .markdown-content-custom.exhibition-content h5,
   .markdown-content-custom.exhibition-content h6 {
-    font-size: 1rem !important;
+    font-size: 0.9rem !important;
     font-weight: 600;
     line-height: 1.3 !important;
     margin: 1rem 0 0.3rem !important;
@@ -134,7 +136,7 @@
     }
 
     .markdown-content-custom.exhibition-content h2 {
-      font-size: 1.35rem !important;
+      font-size: 1rem !important;
     }
   }
 }

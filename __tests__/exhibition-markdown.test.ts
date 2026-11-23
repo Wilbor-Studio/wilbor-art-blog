@@ -14,14 +14,15 @@ describe('normalizeExhibitionMarkdown', () => {
       'Debate',
     ].join('\n');
 
+    // A data também passa a ser exibida com ponto.
     expect(normalizeExhibitionMarkdown(input)).toBe([
       '## Despina',
-      '###### 01/2017',
+      '###### 01.2017',
       'Rio de Janeiro',
       '',
       '',
       '## Graffiti on Debate',
-      '###### 01/2017',
+      '###### 01.2017',
       '',
       'Debate',
     ].join('\n'));
@@ -29,7 +30,8 @@ describe('normalizeExhibitionMarkdown', () => {
 
   it('mantém entradas que já estão no formato título → data', () => {
     const input = '## MULTIVERSO\n07/05/2022\n\nInstalação';
-    expect(normalizeExhibitionMarkdown(input)).toBe(input);
+    expect(normalizeExhibitionMarkdown(input))
+      .toBe('## MULTIVERSO\n07.05.2022\n\nInstalação');
   });
 
   it('aceita intervalo de anos', () => {
@@ -62,5 +64,34 @@ describe('splitExhibitionSections', () => {
   it('não separa em ## nem em # sem espaço', () => {
     const input = '## B\n#hashtag';
     expect(splitExhibitionSections(input)).toEqual([{ title: null, body: input }]);
+  });
+});
+
+describe('datas com ponto', () => {
+  it('troca a barra por ponto nas linhas de data', () => {
+    const out = normalizeExhibitionMarkdown([
+      '## MULTIVERSO COLABORATIVO',
+      '07/05/2022',
+      '',
+      '## Graffiti on Debate',
+      '###### 01/2017',
+    ].join('\n'));
+    expect(out).toContain('\n07.05.2022');
+    expect(out).toContain('###### 01.2017');
+    expect(out).not.toMatch(/\d\/\d/);
+  });
+
+  it('mantém a data depois do título ao mover e formatar', () => {
+    const out = normalizeExhibitionMarkdown('###### 02/2016\n\n## Mostra X');
+    expect(out.split('\n')).toEqual(['## Mostra X', '###### 02.2016']);
+  });
+
+  it('não mexe em barras de links nem do meio do texto', () => {
+    const text = [
+      'Arquivo em 2015/05/01 no acervo',
+      '[site](https://exemplo.com/a/b)',
+      'https://open.spotify.com/track/abc',
+    ].join('\n');
+    expect(normalizeExhibitionMarkdown(text)).toBe(text);
   });
 });

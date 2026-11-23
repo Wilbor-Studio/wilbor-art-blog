@@ -2,6 +2,7 @@ import ReactMarkdown, { type Components } from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import ImageCarousel from './ImageCarousel';
+import { EXHIBITION_DATE_PATTERN } from '@/utility/exhibition-markdown';
 
 interface MarkdownProps {
     children: string;
@@ -14,7 +15,6 @@ interface MarkdownProps {
     hasLittleContent?: boolean;
 }
 
-const EXHIBITION_DATE_PATTERN = /^(\d{2}\/\d{2}\/\d{4}|\d{1,2}\/\d{4}|\d{4}(?:\s*[–-]\s*\d{4})?)$/;
 
 function removeImagesAndVideosFromMarkdown(markdown: string): string {
     let result = markdown.replace(/!\[[^\]]*\]\([^\)]+\)/g, '');
