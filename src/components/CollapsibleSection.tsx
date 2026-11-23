@@ -49,9 +49,11 @@ export default function CollapsibleSection({
           // atravessando a seção — por isso o cromo é zerado explicitamente.
           'border-0 bg-transparent shadow-none rounded-none px-0',
           'group flex flex-1 min-w-0 items-center gap-3 text-left',
-          'py-4 sm:py-5 transition-colors',
-          'text-neutral-500 dark:text-neutral-400',
-          'hover:text-neutral-900 dark:hover:text-neutral-100',
+          'py-4 sm:py-5',
+          // Cor forte fixa, sem mudar no hover: a maior parte do público
+          // entra pelo iPhone e pelo iPad, onde hover não existe, e o
+          // rótulo ficava sempre no cinza apagado.
+          'text-neutral-900 dark:text-neutral-100',
         ].join(' ')}
       >
         {badge && (
