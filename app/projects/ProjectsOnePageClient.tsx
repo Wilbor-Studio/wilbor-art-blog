@@ -3,7 +3,6 @@
 import ViewSwitcher, { SwitcherSelection } from '@/app/ViewSwitcher';
 import About from '@/app/about/page';
 import { PATH_GRID } from '@/app/paths';
-import CollapsibleSection from '@/components/CollapsibleSection';
 import ExhibitionsContent from '@/components/ExhibitionsContent';
 import PartnersContent from '@/components/PartnersContent';
 import SoundContent from '@/components/SoundContent';
@@ -20,10 +19,16 @@ const MemoizedPartnersContent = memo(PartnersContent);
 export default function ProjectsOnePageClient({ projectsProps }: { projectsProps: any }) {
   const [activeSection, setActiveSection] = useState<SwitcherSelection>('projects');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  // A grade começa aberta (é a vitrine do site) e pode ser recolhida. Abre
-  // sozinha quando a pessoa escolhe uma tag, chega por link de projeto ou
-  // toca em "PROJETOS" no menu.
+  // A grade começa aberta (é a vitrine do site) e pode ser recolhida pelo
+  // botão da grade no header. Abre sozinha quando a pessoa escolhe uma tag,
+  // chega por link de projeto ou toca em "PROJETOS" no menu.
   const [projectsOpen, setProjectsOpen] = useState(true);
+  const toggleProjects = useCallback(() => {
+    setProjectsOpen(open => !open);
+    // Volta ao topo para a pessoa ver o resultado do toque (recolher no
+    // meio da grade faria o conteúdo pular).
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -211,36 +216,25 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
           setSelectedTag: handleTagChange,
         }}
         onMenuItemClick={handleMenuItemClick}
+        projectsOpen={projectsOpen}
+        onToggleProjects={toggleProjects}
       />
 
       <div className="flex flex-col w-full">
-        {/* PROJETOS: a grade de cards, recolhível como as outras seções.
-            Fechada, só esconde a grade (não desmonta): projeto aberto e
-            filtro continuam onde estavam ao reabrir. */}
+        {/* PROJETOS: a grade de cards. Recolhe pelo botão da grade no header,
+            sem título na página. Fechada, só esconde (não desmonta): projeto
+            aberto e filtro continuam onde estavam ao reabrir. */}
         <section
           id="projects"
-          className={`w-full bg-white dark:bg-neutral-950 pt-2 md:pt-3 ${projectsOpen ? 'min-h-screen' : ''}`}
+          className={`w-full bg-white dark:bg-neutral-950 ${projectsOpen ? 'min-h-screen pt-6 md:pt-8' : ''}`}
         >
-          {/* Alinha o título com a borda dos cards (margem da grade + borda de 8px do card). */}
-          <div className="mx-auto max-w-[2000px] px-3.5 sm:px-6 md:px-10">
-            <CollapsibleSection
-              size="title"
-              label="Projetos"
-              labelOpen="Projetos"
-              open={projectsOpen}
-              onOpenChange={setProjectsOpen}
-              keepMounted
-              id="projects-grid"
-            >
-              <div className="-mx-3.5 sm:-mx-6 md:-mx-10">
-                <MemoizedProjectsClient
-                  {...projectsProps}
-                  hideSwitcher={true}
-                  externalSelectedTag={selectedTag}
-                  onTagChange={handleTagChange}
-                />
-              </div>
-            </CollapsibleSection>
+          <div id="projects-grid" hidden={!projectsOpen} className={projectsOpen ? 'animate-fade-in' : undefined}>
+            <MemoizedProjectsClient
+              {...projectsProps}
+              hideSwitcher={true}
+              externalSelectedTag={selectedTag}
+              onTagChange={handleTagChange}
+            />
           </div>
         </section>
 

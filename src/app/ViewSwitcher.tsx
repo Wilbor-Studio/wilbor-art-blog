@@ -17,6 +17,8 @@ export default function ViewSwitcher({
   tags,
   isLandingPage = false,
   onMenuItemClick,
+  projectsOpen,
+  onToggleProjects,
 }: {
   currentSelection?: SwitcherSelection
   tags?: any
@@ -28,42 +30,38 @@ export default function ViewSwitcher({
     setSelectedTag?: (tag: string | null) => void;
   }
   onMenuItemClick?: (href: string) => void;
+  /** Grade de projetos aberta? Com onToggleProjects, mostra o botão da grade no header. */
+  projectsOpen?: boolean;
+  onToggleProjects?: () => void;
 }) {
   const [fetchedTags, setFetchedTags] = useState<string[]>([]);
   const { theme, systemTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  // Deslocamento do botão fixo do menu para ele ficar dentro da faixa do
-  // header, que o banner de construção empurra para baixo. Vai a zero assim
-  // que o banner sai de cena no scroll, devolvendo o botão ao topo.
-  const [menuTopOffset, setMenuTopOffset] = useState(0);
+  // O header acompanha a página: some ao rolar para baixo (para não cobrir
+  // o que se lê) e volta ao rolar para cima ou perto do topo.
+  const [headerHidden, setHeaderHidden] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
-    const banner = document.getElementById('construction-banner');
-    if (!banner) return;
-
+    let lastY = window.scrollY;
     let ticking = false;
-
-    const measure = () => {
+    const update = () => {
       ticking = false;
-      setMenuTopOffset(Math.max(0, banner.getBoundingClientRect().bottom));
+      const y = window.scrollY;
+      const delta = y - lastY;
+      if (y < 120) setHeaderHidden(false);
+      else if (delta > 8) setHeaderHidden(true);
+      else if (delta < -8) setHeaderHidden(false);
+      if (Math.abs(delta) > 8) lastY = y;
     };
-
-    const schedule = () => {
+    const onScroll = () => {
       if (ticking) return;
       ticking = true;
-      window.requestAnimationFrame(measure);
+      window.requestAnimationFrame(update);
     };
-
-    measure();
-    window.addEventListener('scroll', schedule, { passive: true });
-    window.addEventListener('resize', schedule);
-
-    return () => {
-      window.removeEventListener('scroll', schedule);
-      window.removeEventListener('resize', schedule);
-    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   // If the page didn't provide tags, fetch them from the API so other routes also
@@ -131,68 +129,92 @@ export default function ViewSwitcher({
   // Header: preto no dark, uma faixa cinza-clara no light, com o restante da página permanecendo branco
   const headerBgColor = isDarkMode ? '#000000' : '#e5e5e5'; // gray-200 aproximado do fundo cinza do header
 
+  const drawerProps = {
+    tags: tagsToUse,
+    selectedTag: drawerTagsProps?.selectedTag ?? null,
+    setSelectedTag: drawerTagsProps?.setSelectedTag,
+    menuItems,
+    onMenuItemClick,
+  };
+
+  const controlButton = [
+    'flex h-11 w-11 items-center justify-center rounded-full border-0 p-0 shadow-none',
+    // Mesma cor do ícone do menu (IconMenu: text-gray-500).
+    'bg-transparent text-gray-500 transition-colors',
+    'hover:bg-black/5 dark:hover:bg-white/10',
+    'focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500',
+  ].join(' ');
+
   return (
-    <>
-      {/* Mobile: logo à esquerda e Drawer à direita */}
-      <div className="md:hidden w-full flex items-center justify-between pr-4" style={{ height: '64px', backgroundColor: headerBgColor }}>
-        {/* Logo/thumbnail centralizado e contido no topo */}
-        <div className="h-full overflow-hidden flex-1 flex items-center">
-          <BannerWilborSwitcher forceWhiteLogo />
-        </div>
-        <div className="flex items-center flex-shrink-0 mr-0 w-[64px] h-[44px]" aria-hidden="true" />
-      </div>
-      {/* Desktop: Header com faixa preta e menu separado */}
-      <div className="hidden md:flex w-full items-center justify-between relative" style={{ height: '90px' }}>
-        {/* Faixa preta que ocupa 100% mas fica por trás do menu */}
-        <div className="absolute inset-0 z-10" style={{ backgroundColor: headerBgColor, right: '90px' }}>
-          <div className="h-full w-full flex items-center relative">
+    // Um header só, fixo no topo: logo à esquerda e controles dentro da
+    // faixa, à direita. Antes o menu era uma caixa branca solta, fixa sobre
+    // o conteúdo. Escondido, sobe com transform; visível fica sem transform,
+    // porque a gaveta do menu usa position: fixed aqui dentro e um transform
+    // a prenderia ao header.
+    <header
+      className="sticky top-0 z-40 w-full transition-transform duration-300 ease-out motion-reduce:transition-none"
+      style={{
+        backgroundColor: headerBgColor,
+        transform: headerHidden ? 'translateY(-100%)' : undefined,
+      }}
+    >
+      <div className="relative flex h-16 w-full items-center md:h-[90px]">
+        <div className="h-full min-w-0 flex-1 overflow-hidden">
+          <div className="relative flex h-full w-full items-center">
             <BannerWilborSwitcher forceWhiteLogo />
           </div>
         </div>
 
-        {/* Espaçador para empurrar o menu para a direita */}
-        <div className="flex-grow" />
+        <div className="relative z-10 flex shrink-0 items-center gap-1 pl-2 pr-2 md:gap-2 md:pr-6">
+          {onToggleProjects && (
+            <button
+              type="button"
+              onClick={onToggleProjects}
+              aria-pressed={Boolean(projectsOpen)}
+              aria-controls="projects-grid"
+              aria-label={projectsOpen ? 'Recolher projetos' : 'Mostrar projetos'}
+              title={projectsOpen ? 'Recolher projetos' : 'Mostrar projetos'}
+              className={controlButton}
+            >
+              <GridToggleIcon open={Boolean(projectsOpen)} />
+            </button>
+          )}
+          {/* O botão do menu no celular tem 64px de largura próprios. */}
+          <div className="flex h-11 items-center md:hidden">
+            <DrawerTagsMobile {...drawerProps} />
+          </div>
+          <div className="hidden h-11 w-11 md:block">
+            <DrawerTagsDesktop {...drawerProps} />
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
 
-        {/* Menu quadrado na extrema direita, sobrepondo ou ao lado da faixa */}
-        <div className="flex items-center justify-center flex-shrink-0 z-20 bg-white dark:bg-[#222222] relative" style={{ width: '90px', height: '90px' }}>
-          <span className="sr-only">Espaço reservado para o botão do drawer</span>
-        </div>
-      </div>
-      <div
-        className="fixed right-0 z-50 hidden md:flex pointer-events-none"
-        style={{ top: menuTopOffset, width: '90px', height: '90px' }}
-        aria-label="Atalho para o menu de tags"
-      >
-        <div
-          className="pointer-events-auto flex items-center justify-center w-full h-full bg-white dark:bg-[#222222] border border-gray-200 dark:border-neutral-800 rounded-l-xl"
-        >
-          <DrawerTagsDesktop
-            tags={tagsToUse}
-            selectedTag={drawerTagsProps?.selectedTag ?? null}
-            setSelectedTag={drawerTagsProps?.setSelectedTag}
-            menuItems={menuItems}
-            onMenuItemClick={onMenuItemClick}
+/** Ícone da grade de projetos: aberta, quatro blocos cheios; recolhida, só o contorno. */
+function GridToggleIcon({ open }: { open: boolean }) {
+  return (
+    <svg className="h-7 w-7 md:h-6 md:w-6" viewBox="0 0 24 24" aria-hidden="true">
+      {open
+        // Aberta: quadrados cheios, com espaço entre eles.
+        ? [[4, 4], [13.5, 4], [4, 13.5], [13.5, 13.5]].map(([x, y]) => (
+          <rect key={`${x}-${y}`} x={x} y={y} width="6.5" height="6.5" rx="1" fill="currentColor" />
+        ))
+        // Recolhida: só o contorno.
+        : [[4.5, 4.5], [14, 4.5], [4.5, 14], [14, 14]].map(([x, y]) => (
+          <rect
+            key={`${x}-${y}`}
+            x={x}
+            y={y}
+            width="5.5"
+            height="5.5"
+            rx="1"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
           />
-        </div>
-      </div>
-      <div
-        className="fixed right-0 z-50 md:hidden pointer-events-none"
-        style={{ top: menuTopOffset, width: '64px', height: '64px' }}
-        aria-label="Atalho móvel para o menu de tags"
-      >
-        <div
-          className="pointer-events-auto flex items-center justify-center w-full h-full"
-          style={{ background: 'transparent' }}
-        >
-          <DrawerTagsMobile
-            tags={tagsToUse}
-            selectedTag={drawerTagsProps?.selectedTag ?? null}
-            setSelectedTag={drawerTagsProps?.setSelectedTag}
-            menuItems={menuItems}
-            onMenuItemClick={onMenuItemClick}
-          />
-        </div>
-      </div>
-    </>
+        ))}
+    </svg>
   );
 }
