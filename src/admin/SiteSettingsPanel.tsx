@@ -269,6 +269,19 @@ export default function SiteSettingsPanel({
                       })}
                   />
                 </div>
+
+                <div>
+                  <label htmlFor="title-sound" className={labelClass}>
+                    Seção bota o som
+                  </label>
+                  <input
+                    id="title-sound"
+                    className={field}
+                    value={config.sectionTitles.sound}
+                    onChange={event =>
+                      update('sectionTitles', { sound: event.target.value })}
+                  />
+                </div>
               </section>
 
               {error && (

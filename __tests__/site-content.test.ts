@@ -50,7 +50,11 @@ describe('parseSiteConfig', () => {
   it('faz ida e volta pelo corpo do post', () => {
     const custom = {
       ...DEFAULT_SITE_CONFIG,
-      sectionTitles: { about: 'Quem é Wilbor', partners: 'Com quem trabalhou' },
+      sectionTitles: {
+        about: 'Quem é Wilbor',
+        partners: 'Com quem trabalhou',
+        sound: 'Trilha',
+      },
     };
 
     expect(parseSiteConfig(buildSiteConfigBody(custom))).toEqual(custom);

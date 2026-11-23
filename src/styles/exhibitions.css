@@ -142,22 +142,24 @@
 /*
  * Fundos das seções de texto da landing, em degraus iguais: Sobre é a mais
  * escura e cada seção abaixo fica um tom mais clara (Exposições →
- * Publicações → Parceiros). Ficam juntos aqui para a escala ser ajustada
+ * Publicações → Bota o som → Parceiros). Ficam juntos aqui para a escala ser ajustada
  * num lugar só. Publicações é uma faixa dentro de Exposições
  * (.publications-band, logo abaixo).
  */
 :root {
-  --tone-about: #e5e5e5;        /* neutral-200 */
-  --tone-exhibitions: #ebebeb;
-  --tone-publications: #f2f2f2;
-  --tone-partners: #f8f8f8;
+  --tone-about: #e2e2e2;
+  --tone-exhibitions: #e8e8e8;
+  --tone-publications: #eeeeee;
+  --tone-sound: #f4f4f4;
+  --tone-partners: #fafafa;
 }
 
 .dark {
-  --tone-about: #141414;
-  --tone-exhibitions: #1c1c1c;
-  --tone-publications: #242424;
-  --tone-partners: #2c2c2c;
+  --tone-about: #121212;
+  --tone-exhibitions: #191919;
+  --tone-publications: #202020;
+  --tone-sound: #272727;
+  --tone-partners: #2e2e2e;
 }
 
 /*

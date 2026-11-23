@@ -15,6 +15,9 @@ export const SITE_AUTHOR = process.env.NEXT_PUBLIC_HIVE_USERNAME || '';
 /** Post com os parágrafos de resumo, em markdown livre. */
 export const PERMLINK_ABOUT_SUMMARY = 'site-resumo-sobre';
 
+/** Post da seção "Bota o som": players e links de música, em markdown. */
+export const PERMLINK_SOUND = 'site-bota-o-som';
+
 /** Post com as configurações estruturadas. */
 export const PERMLINK_SITE_CONFIG = 'site-configuracoes';
 
@@ -33,6 +36,7 @@ export interface SeoConfig {
 export interface SectionTitles {
   about: string;
   partners: string;
+  sound: string;
 }
 
 export interface SiteConfig {
@@ -57,6 +61,7 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
   sectionTitles: {
     about: 'Sobre Wilbor',
     partners: 'Parceiros',
+    sound: 'Bota o som',
   },
 };
 

@@ -81,6 +81,8 @@ export function transformExternalMedia(markdown: string) {
   const youtubePattern = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/i;
   const vimeoPattern = /(?:vimeo\.com\/|player\.vimeo\.com\/video\/)(\d+)/i;
   const videoFilePattern = /\.(mp4|webm|mov|m4v|ogg)(\?.*)?$/i;
+  const spotifyPattern = /open\.spotify\.com\/(?:intl-[a-z-]+\/)?(track|album|playlist|episode|show|artist)\/([a-zA-Z0-9]+)/i;
+  const soundcloudPattern = /^https?:\/\/(?:www\.|m\.)?soundcloud\.com\/[^\s]+$/i;
 
   return markdown
     .split('\n')
@@ -99,6 +101,16 @@ export function transformExternalMedia(markdown: string) {
       const vimeoMatch = trimmed.match(vimeoPattern);
       if (vimeoMatch) {
         return `<iframe src="https://player.vimeo.com/video/${vimeoMatch[1]}" allow="autoplay; fullscreen" frameborder="0"></iframe>`;
+      }
+
+      const spotifyMatch = trimmed.match(spotifyPattern);
+      if (spotifyMatch) {
+        return `<iframe src="https://open.spotify.com/embed/${spotifyMatch[1]}/${spotifyMatch[2]}" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" frameborder="0"></iframe>`;
+      }
+
+      if (soundcloudPattern.test(trimmed)) {
+        const url = encodeURIComponent(trimmed.split('?')[0]);
+        return `<iframe src="https://w.soundcloud.com/player/?url=${url}&color=%23111111&visual=false" allow="autoplay" loading="lazy" frameborder="0"></iframe>`;
       }
 
       if (videoFilePattern.test(trimmed)) {
