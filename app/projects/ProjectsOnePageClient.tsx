@@ -3,6 +3,7 @@
 import ViewSwitcher, { SwitcherSelection } from '@/app/ViewSwitcher';
 import About from '@/app/about/page';
 import { PATH_GRID } from '@/app/paths';
+import CollapsibleSection from '@/components/CollapsibleSection';
 import ExhibitionsContent from '@/components/ExhibitionsContent';
 import PartnersContent from '@/components/PartnersContent';
 import SoundContent from '@/components/SoundContent';
@@ -19,6 +20,10 @@ const MemoizedPartnersContent = memo(PartnersContent);
 export default function ProjectsOnePageClient({ projectsProps }: { projectsProps: any }) {
   const [activeSection, setActiveSection] = useState<SwitcherSelection>('projects');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  // A grade começa aberta (é a vitrine do site) e pode ser recolhida. Abre
+  // sozinha quando a pessoa escolhe uma tag, chega por link de projeto ou
+  // toca em "PROJETOS" no menu.
+  const [projectsOpen, setProjectsOpen] = useState(true);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -50,6 +55,7 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
     } else {
       setSelectedTag(null);
     }
+    if (tagFromUrl || searchParams.get('project')) setProjectsOpen(true);
   }, [searchParams]);
 
   const handleTagChange = useCallback((tag: string | null) => {
@@ -63,6 +69,7 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
     // (não remover, apenas atualizar a tag)
     window.history.pushState({}, '', url.toString());
     setSelectedTag(tag);
+    if (tag) setProjectsOpen(true);
   }, []);
 
   // Handler para navegação por hash (scroll suave até a seção)
@@ -89,11 +96,15 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
 
         setSelectedTag(null);
         setActiveSection('projects');
+        setProjectsOpen(true);
         window.dispatchEvent(new CustomEvent('wilbor:close-expanded-project'));
         router.replace(PATH_GRID + cleanUrl.search);
         window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
+
+      // "CONTATO" no menu abre a caixa de mensagem do rodapé.
+      if (targetId === 'contact') window.dispatchEvent(new Event('wilbor:open-contact'));
 
       const targetElement = document.getElementById(targetId);
       if (targetElement) {
@@ -203,14 +214,34 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
       />
 
       <div className="flex flex-col w-full">
-        {/* PROJETOS (mantido como estava, só grid + filtros) */}
-        <section id="projects" className="min-h-screen w-full bg-white dark:bg-neutral-950 pt-6 md:pt-8">
-          <MemoizedProjectsClient
-            {...projectsProps}
-            hideSwitcher={true}
-            externalSelectedTag={selectedTag}
-            onTagChange={handleTagChange}
-          />
+        {/* PROJETOS: a grade de cards, recolhível como as outras seções.
+            Fechada, só esconde a grade (não desmonta): projeto aberto e
+            filtro continuam onde estavam ao reabrir. */}
+        <section
+          id="projects"
+          className={`w-full bg-white dark:bg-neutral-950 pt-2 md:pt-3 ${projectsOpen ? 'min-h-screen' : ''}`}
+        >
+          {/* Alinha o título com a borda dos cards (margem da grade + borda de 8px do card). */}
+          <div className="mx-auto max-w-[2000px] px-3.5 sm:px-6 md:px-10">
+            <CollapsibleSection
+              size="title"
+              label="Projetos"
+              labelOpen="Projetos"
+              open={projectsOpen}
+              onOpenChange={setProjectsOpen}
+              keepMounted
+              id="projects-grid"
+            >
+              <div className="-mx-3.5 sm:-mx-6 md:-mx-10">
+                <MemoizedProjectsClient
+                  {...projectsProps}
+                  hideSwitcher={true}
+                  externalSelectedTag={selectedTag}
+                  onTagChange={handleTagChange}
+                />
+              </div>
+            </CollapsibleSection>
+          </div>
         </section>
 
         {/* ABOUT COMO SEÇÃO DA LANDING */}

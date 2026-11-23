@@ -145,7 +145,8 @@ function useDynamicFooterPost(username: string) {
  *
  * Alinha com a coluna das seções de texto (TEXT_SECTION_INNER): a marca do
  * estúdio à esquerda; à direita, "Fale com o estúdio" com os ícones de
- * contato na mesma linha e a caixa de mensagem logo abaixo. Embaixo, uma
+ * contato na mesma linha e a caixa de mensagem logo abaixo, recolhida até
+ * a pessoa abrir. Embaixo, uma
  * barra fina com a assinatura (post "footer" do Hive) e a entrada do
  * artista. No celular tudo empilha, centralizado.
  *
@@ -163,6 +164,18 @@ export default function Footer() {
 
   const footerPost = !loading && !error ? posts[0] : undefined;
   const logo = footerPost ? extractImagesFromPost(footerPost) : [];
+
+  // A caixa de mensagem começa recolhida: marca, ícones de contato e
+  // assinatura ficam sempre à vista, e "Fale com o estúdio" abre a caixa.
+  // Abre sozinha pelo "CONTATO" do menu ou chegando com #contact no link.
+  const hasForm = Boolean(contactTargets.whatsapp || contactTargets.email);
+  const [formOpen, setFormOpen] = useState(false);
+  useEffect(() => {
+    if (window.location.hash === '#contact') setFormOpen(true);
+    const open = () => setFormOpen(true);
+    window.addEventListener('wilbor:open-contact', open);
+    return () => window.removeEventListener('wilbor:open-contact', open);
+  }, []);
 
   return (
     <footer
@@ -198,14 +211,36 @@ export default function Footer() {
             {/* Contato */}
             <div className="w-full">
               <div className="mb-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 md:justify-between">
-                <h2
-                  className={[
-                    // Mesmo traço dos títulos de seção, num tamanho menor.
-                    'text-base font-extrabold uppercase tracking-[0.02em]',
-                    'text-gray-900 dark:text-gray-100',
-                  ].join(' ')}
-                >
-                  Fale com o estúdio
+                <h2 className="m-0">
+                  <button
+                    type="button"
+                    onClick={() => setFormOpen(open => !open)}
+                    disabled={!hasForm}
+                    aria-expanded={formOpen}
+                    aria-controls="footer-contact-form"
+                    className={[
+                      // Zera o cromo que o tailwind.css dá a todo <button>.
+                      'border-0 bg-transparent shadow-none rounded-none p-0',
+                      'flex min-h-11 items-center gap-2 disabled:cursor-default',
+                      // Mesmo traço dos títulos de seção, num tamanho menor.
+                      'text-base font-extrabold uppercase tracking-[0.02em]',
+                      'text-gray-900 dark:text-gray-100',
+                    ].join(' ')}
+                  >
+                    Fale com o estúdio
+                    {hasForm && (
+                      <svg
+                        className={`h-4 w-4 shrink-0 transition-transform duration-200 ${formOpen ? '' : 'rotate-90'}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        aria-hidden="true"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                      </svg>
+                    )}
+                  </button>
                 </h2>
                 {contactPost && (
                   <div className="footer-contact">
@@ -216,11 +251,14 @@ export default function Footer() {
                 )}
               </div>
 
-              <FooterContactForm
-                targets={contactTargets}
-                className="w-full"
-                showLabel={false}
-              />
+              {/* Recolhida só esconde: a mensagem já digitada não se perde. */}
+              <div id="footer-contact-form" hidden={!formOpen} className={formOpen ? 'animate-fade-in' : undefined}>
+                <FooterContactForm
+                  targets={contactTargets}
+                  className="w-full"
+                  showLabel={false}
+                />
+              </div>
 
               {contactPost && (
                 <div className="mt-3 flex justify-center md:justify-end">

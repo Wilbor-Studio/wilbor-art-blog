@@ -16,6 +16,11 @@ export default function CollapsibleSection({
   count,
   size = 'default',
   action,
+  defaultOpen = false,
+  open,
+  onOpenChange,
+  keepMounted = false,
+  id,
 }: {
   children: React.ReactNode
   label: string
@@ -30,9 +35,28 @@ export default function CollapsibleSection({
    * que abre e fecha, então tocar nela não mexe no acordeão.
    */
   action?: React.ReactNode
+  /** Começa aberta (ex.: a grade de projetos). */
+  defaultOpen?: boolean
+  /** Estado controlado de fora (ex.: abrir ao escolher um filtro). */
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  /**
+   * Fechada, só esconde o conteúdo em vez de desmontá-lo: preserva o
+   * estado dele (projeto aberto, filtros) e não recarrega ao reabrir.
+   */
+  keepMounted?: boolean
+  /** id do conteúdo, para links e aria-controls estáveis. */
+  id?: string
 }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const contentId = useId();
+  const [internalOpen, setInternalOpen] = useState(defaultOpen);
+  const isOpen = open ?? internalOpen;
+  const setIsOpen = (next: boolean | ((prev: boolean) => boolean)) => {
+    const value = typeof next === 'function' ? next(isOpen) : next;
+    setInternalOpen(value);
+    onOpenChange?.(value);
+  };
+  const generatedId = useId();
+  const contentId = id ?? generatedId;
 
   return (
     <div>
@@ -111,7 +135,11 @@ export default function CollapsibleSection({
       {action && <div className="shrink-0">{action}</div>}
       </div>
 
-      {isOpen && (
+      {keepMounted ? (
+        <div id={contentId} hidden={!isOpen} className={isOpen ? 'pb-5 animate-fade-in' : undefined}>
+          {children}
+        </div>
+      ) : isOpen && (
         <div id={contentId} className="pb-5 animate-fade-in">
           {children}
         </div>
