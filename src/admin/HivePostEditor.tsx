@@ -13,6 +13,7 @@ import {
   transformExternalMedia,
   uploadMediaToIpfs,
 } from './hive-post';
+import { CONTROL_TAGS as CONTROL_TAG_SET, isSiteContentTags } from '@/lib/hive/control-tags';
 
 type EditorMode = 'create' | 'edit';
 
@@ -45,6 +46,12 @@ export interface HivePostEditorProps {
   initialThumbnail?: string;
 }
 
+/**
+ * As tags de controle não aparecem como chips no editor: 'hidden' e
+ * 'destaque' viram controles próprios, e 'site' é só preservada.
+ */
+const CONTROL_TAGS = Array.from(CONTROL_TAG_SET);
+
 const IMAGE_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif';
 const VIDEO_ACCEPT = 'video/mp4,video/webm,video/quicktime';
 
@@ -72,7 +79,15 @@ export default function HivePostEditor({
 
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
-  const [tags, setTags] = useState<string[]>(() => normalizeTags(initialTags));
+  const normalizedInitialTags = useMemo(() => normalizeTags(initialTags), [initialTags]);
+  // Conteúdo de seção (rodapé, contato…) nunca vai para a grade: ali o
+  // controle de visibilidade não faz sentido, e exigir uma tag de assunto
+  // o transformaria num projeto oculto.
+  const isSiteContent = isSiteContentTags(normalizedInitialTags);
+  const [tags, setTags] = useState<string[]>(() =>
+    normalizedInitialTags.filter(tag => !CONTROL_TAGS.includes(tag)));
+  const [isHidden, setIsHidden] = useState(() => normalizedInitialTags.includes('hidden'));
+  const [isFeatured, setIsFeatured] = useState(() => normalizedInitialTags.includes('destaque'));
   const [tagInput, setTagInput] = useState('');
   const [newMedia, setNewMedia] = useState<NewMedia[]>([]);
   const [thumbnailChoice, setThumbnailChoice] = useState<ThumbnailChoice>(
@@ -264,11 +279,20 @@ export default function HivePostEditor({
       return;
     }
 
-    const pendingTags = tagInput.trim()
+    const contentTags = (tagInput.trim()
       ? normalizeTags([...tags, ...tagInput.split(/[,\s]+/g)])
-      : normalizeTags(tags);
+      : normalizeTags(tags)).filter(tag => !CONTROL_TAGS.includes(tag));
 
-    if (pendingTags.length === 0) {
+    // As tags de controle vão no fim: a primeira tag é a categoria do post.
+    const controlTags = isSiteContent
+      ? normalizedInitialTags.filter(tag => CONTROL_TAGS.includes(tag))
+      : [
+        ...isFeatured ? ['destaque'] : [],
+        ...isHidden ? ['hidden'] : [],
+      ];
+    const pendingTags = normalizeTags([...contentTags, ...controlTags]);
+
+    if (contentTags.length === 0 && !isSiteContent) {
       setError(`Adicione pelo menos 1 tag antes de ${mode === 'create' ? 'publicar' : 'salvar'}.`);
       return;
     }
@@ -352,13 +376,12 @@ export default function HivePostEditor({
 
   return (
     <div
-      className="wilbor-admin fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-0 sm:p-4"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      className="wilbor-admin wilbor-editor-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/80"
       role="dialog"
       aria-modal="true"
       aria-label={mode === 'create' ? 'Criar projeto' : 'Editar projeto'}
     >
-      <div className="relative w-full h-full sm:h-auto sm:max-h-[95vh] max-w-[1400px] flex flex-col bg-zinc-900 sm:rounded-xl border border-zinc-700/70 shadow-2xl overflow-hidden">
+      <div className="relative w-full h-full max-w-[1400px] sm:max-h-[960px] flex flex-col bg-zinc-900 sm:rounded-xl sm:border border-zinc-700/70 shadow-2xl overflow-hidden">
 
         {/* Cabeçalho */}
         <div className="flex items-center gap-3 px-4 md:px-5 py-3 border-b border-zinc-800 flex-shrink-0">
@@ -385,12 +408,17 @@ export default function HivePostEditor({
         </div>
 
         {/* Corpo */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="px-4 md:px-5 py-4 space-y-4">
-            <div className="grid gap-4 lg:grid-cols-2 items-start">
+        {/*
+          Em telas largas (iPad deitado, desktop) o corpo não rola: editor e
+          preview ocupam a altura que sobra, e capa/tags ficam numa faixa
+          compacta embaixo. Assim o modal cabe inteiro, com as bordas à mostra.
+        */}
+        <div className="flex-1 min-h-0 overflow-y-auto lg:overflow-hidden lg:flex lg:flex-col">
+          <div className="px-4 md:px-5 py-4 space-y-4 lg:flex-1 lg:min-h-0 lg:flex lg:flex-col">
+            <div className="grid gap-4 lg:grid-cols-2 items-stretch lg:flex-1 lg:min-h-0">
 
               {/* Editor */}
-              <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 overflow-hidden shadow-inner flex flex-col h-[45vh] lg:h-[62vh] min-h-[280px]">
+              <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 overflow-hidden shadow-inner flex flex-col h-[45dvh] min-h-[280px] lg:h-auto lg:min-h-[240px]">
                 <div className="flex flex-wrap items-center gap-1 border-b border-zinc-800/80 px-2 py-1.5">
                   <button
                     type="button"
@@ -461,7 +489,7 @@ export default function HivePostEditor({
               </div>
 
               {/* Preview com os estilos do site */}
-              <div className="rounded-xl border border-zinc-800 bg-white dark:bg-zinc-950 overflow-hidden flex flex-col h-[45vh] lg:h-[62vh] min-h-[280px]">
+              <div className="rounded-xl border border-zinc-800 bg-white dark:bg-zinc-950 overflow-hidden flex flex-col h-[45dvh] min-h-[280px] lg:h-auto lg:min-h-[240px]">
                 <div className="flex items-center justify-between border-b border-zinc-800 px-3 py-2 bg-zinc-900">
                   <span className="text-[11px] uppercase tracking-wide text-zinc-500">
                     Preview (como aparece no site)
@@ -475,6 +503,7 @@ export default function HivePostEditor({
               </div>
             </div>
 
+            <div className="space-y-4 lg:flex-shrink-0 lg:max-h-[38%] lg:overflow-y-auto lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-x-4 lg:gap-y-3">
             {/* Mídias enviadas */}
             {newMedia.length > 0 && (
               <div>
@@ -531,7 +560,7 @@ export default function HivePostEditor({
                       type="button"
                       onClick={() => setThumbnailChoice(candidate.choice)}
                       aria-pressed={isChosen(candidate.choice)}
-                      className={`relative h-20 w-20 rounded-lg border-2 overflow-hidden transition ${
+                      className={`relative h-20 w-20 lg:h-14 lg:w-14 rounded-lg border-2 overflow-hidden transition ${
                         isChosen(candidate.choice)
                           ? 'border-green-400 ring-2 ring-green-400/30'
                           : 'border-zinc-700 hover:border-zinc-500'
@@ -583,8 +612,10 @@ export default function HivePostEditor({
               />
             </div>
 
+            </div>
+
             {error && (
-              <div className="rounded-lg bg-red-950/40 border border-red-900/50 px-3 py-2.5">
+              <div className="rounded-lg bg-red-950/40 border border-red-900/50 px-3 py-2.5 lg:flex-shrink-0">
                 <p className="text-xs text-red-400 font-mono">{error}</p>
               </div>
             )}
@@ -592,8 +623,60 @@ export default function HivePostEditor({
         </div>
 
         {/* Rodapé */}
-        <div className="px-4 md:px-5 py-3 border-t border-zinc-800 flex-shrink-0 flex items-center justify-end gap-2">
-          {isUploading && (
+        <div className="px-4 md:px-5 py-3 border-t border-zinc-800 flex-shrink-0 flex flex-wrap items-center justify-end gap-2">
+          {!isSiteContent && (
+            <div className="mr-auto flex flex-wrap items-center gap-2">
+              <div
+                role="radiogroup"
+                aria-label="Visibilidade no site"
+                className="inline-flex rounded-full border border-zinc-700 p-0.5"
+              >
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={!isHidden}
+                  onClick={() => setIsHidden(false)}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition ${
+                    !isHidden ? 'bg-white text-zinc-950 font-medium' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <EyeIcon open />
+                  Visível
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={isHidden}
+                  onClick={() => setIsHidden(true)}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition ${
+                    isHidden ? 'bg-amber-400 text-zinc-950 font-medium' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <EyeIcon open={false} />
+                  Oculto
+                </button>
+              </div>
+              <button
+                type="button"
+                aria-pressed={isFeatured}
+                onClick={() => setIsFeatured(value => !value)}
+                title="Fixa o projeto no topo da grade"
+                className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                  isFeatured
+                    ? 'border-white text-white'
+                    : 'border-zinc-700 text-zinc-400 hover:text-white'
+                }`}
+              >
+                {isFeatured ? '★ Em destaque' : '☆ Destacar'}
+              </button>
+              {isUploading && (
+                <span className="text-xs text-zinc-500 font-mono">
+                  Enviando mídias…
+                </span>
+              )}
+            </div>
+          )}
+          {isSiteContent && isUploading && (
             <span className="mr-auto text-xs text-zinc-500 font-mono">
               Enviando mídias…
             </span>
@@ -618,5 +701,20 @@ export default function HivePostEditor({
         </div>
       </div>
     </div>
+  );
+}
+
+function EyeIcon({ open }: { open: boolean }) {
+  return (
+    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+      {open ? (
+        <>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+        </>
+      ) : (
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+      )}
+    </svg>
   );
 }
