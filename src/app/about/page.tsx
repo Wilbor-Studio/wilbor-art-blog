@@ -6,6 +6,7 @@ import { isBlockedPermlink } from '@/lib/hive/blocked-posts';
 import EditPostButton, { SECTION_EDIT_CLASS } from '@/admin/EditPostButton';
 import AboutSummary from '@/components/AboutSummary';
 import CollapsibleSection from '@/components/CollapsibleSection';
+import { TEXT_SECTION_INNER, TEXT_SECTION_SHELL } from '@/components/textSection';
 import Markdown from '@/components/Markdown';
 import { useSiteConfig } from '@/lib/hive/useSiteConfig';
 import { useEffect, useState } from 'react';
@@ -138,8 +139,8 @@ export default function About() {
   );
 
   return (
-    <div className="w-full px-4 sm:px-8 md:px-12 py-6 sm:py-8 dark:text-gray-200 text-left">
-      <div className="w-full max-w-4xl mx-auto text-left space-y-4 sm:space-y-3">
+    <div className={TEXT_SECTION_SHELL}>
+      <div className={TEXT_SECTION_INNER}>
         {/* Título e resumo são conteúdo do site: ficam de fora do gate do
             Hive para continuarem aparecendo se o fetch falhar. O título
             abre e fecha só o resumo; "saber mais" fica sempre visível. */}
@@ -156,7 +157,7 @@ export default function About() {
             {hivePosts.map((post, index) => {
               const media = extractMediaFromPost(post);
               return (
-                <article key={post.permlink} className="mb-4 sm:mb-6 py-2 sm:py-3">
+                <article key={post.permlink}>
                   <div className="space-y-1 sm:space-y-0">
                     <EditPostButton
                       post={post}

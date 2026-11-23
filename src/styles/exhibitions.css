@@ -176,8 +176,21 @@
   box-shadow: 0 0 0 100vmax var(--band-bg);
   clip-path: inset(0 -100vmax -100vmax);
   border-top: 1px solid var(--band-rule);
-  margin-top: 1.5rem;
-  padding-bottom: 0.5rem;
+  /*
+   * Fechada, a faixa fica simétrica: em cima, o mesmo padding que a seção
+   * dá embaixo (TEXT_SECTION_SHELL: py-3 / sm:py-4), que a faixa cobre ao
+   * descer até o fim da seção. A margem repete o respiro de cima de
+   * Exposições, para os dois títulos terem a mesma altura.
+   */
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .publications-band {
+    margin-top: 1rem;
+    padding-top: 1rem;
+  }
 }
 
 .dark .publications-band {
