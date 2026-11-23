@@ -200,3 +200,12 @@
 .dark .publications-band {
   --band-rule: rgb(38 38 38 / 0.7);
 }
+
+/*
+ * Carrossel (ImageCarousel): a rolagem horizontal é a nativa, com encaixe
+ * por imagem, mas a barra de rolagem não aparece — a navegação é pelo
+ * toque, pelas setas e pelas bolinhas.
+ */
+.carousel-scroller::-webkit-scrollbar {
+  display: none;
+}
