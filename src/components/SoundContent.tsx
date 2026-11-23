@@ -67,7 +67,8 @@ export default function SoundContent() {
               />
             }
           >
-            <Markdown className="exhibition-content">{body}</Markdown>
+            {/* Mesma cor de texto das outras seções (Sobre, Parceiros). */}
+            <Markdown>{body}</Markdown>
           </CollapsibleSection>
         ) : (
           // Só o artista chega aqui: a seção ainda não foi publicada.
