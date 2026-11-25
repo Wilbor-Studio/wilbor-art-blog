@@ -142,18 +142,24 @@
 }
 
 /*
- * Fundos das seções de texto da landing, em degraus iguais: Sobre é a mais
- * escura e cada seção abaixo fica um tom mais clara (Exposições →
- * Publicações → Bota o som → Parceiros). Ficam juntos aqui para a escala ser ajustada
- * num lugar só. Publicações é uma faixa dentro de Exposições
- * (.publications-band, logo abaixo).
+ * Fundos das faixas da landing, em degraus iguais: o header é o mais
+ * escuro e cada faixa abaixo fica um tom mais clara (Sobre → Exposições →
+ * Publicações → Bota o som → Parceiros → Contato → faixa final do rodapé).
+ * Ficam juntos aqui para a escala ser ajustada num lugar só. Publicações é
+ * uma faixa dentro de Exposições (.publications-band, logo abaixo).
+ *
+ * No claro, o header é #e5e5e5 (ViewSwitcher) e a escala sobe dele até
+ * quase branco, em degraus de ~3,5; no escuro, sai do preto do header em
+ * degraus de 7.
  */
 :root {
-  --tone-about: #e2e2e2;
-  --tone-exhibitions: #e8e8e8;
-  --tone-publications: #eeeeee;
-  --tone-sound: #f4f4f4;
-  --tone-partners: #fafafa;
+  --tone-about: #e8e8e8;
+  --tone-exhibitions: #ebebeb;
+  --tone-publications: #efefef;
+  --tone-sound: #f2f2f2;
+  --tone-partners: #f6f6f6;
+  --tone-contact: #f9f9f9;
+  --tone-footer: #fdfdfd;
 }
 
 .dark {
@@ -162,6 +168,8 @@
   --tone-publications: #202020;
   --tone-sound: #272727;
   --tone-partners: #2e2e2e;
+  --tone-contact: #353535;
+  --tone-footer: #3c3c3c;
 }
 
 /*

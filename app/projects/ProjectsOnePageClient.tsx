@@ -4,6 +4,7 @@ import ViewSwitcher, { SwitcherSelection } from '@/app/ViewSwitcher';
 import About from '@/app/about/page';
 import { PATH_GRID } from '@/app/paths';
 import Collapse from '@/components/Collapse';
+import useFillViewportBands from '@/components/useFillViewportBands';
 import ExhibitionsContent from '@/components/ExhibitionsContent';
 import PartnersContent from '@/components/PartnersContent';
 import SoundContent from '@/components/SoundContent';
@@ -24,6 +25,8 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
   // toque na faixa do header. Abre sozinha quando a pessoa escolhe uma tag,
   // chega por link de projeto ou toca em "PROJETOS" no menu.
   const [projectsOpen, setProjectsOpen] = useState(true);
+  // Com tudo fechado, as faixas das seções dividem a altura da tela.
+  useFillViewportBands();
   const toggleProjects = useCallback(() => {
     setProjectsOpen(open => !open);
     // Volta ao topo para a pessoa ver o resultado do toque (recolher no

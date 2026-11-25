@@ -150,7 +150,12 @@ export default function ViewSwitcher({
         transform: headerHidden ? 'translateY(-100%)' : undefined,
       }}
     >
-      <div className="relative h-16 w-full md:h-[90px]">
+      {/* --band-header-h: com tudo fechado, o header fica da altura das
+          faixas das seções (useFillViewportBands). */}
+      <div
+        data-band-header=""
+        className="relative h-[var(--band-header-h,4rem)] w-full md:h-[var(--band-header-h,90px)]"
+      >
         {/* A faixa toda (fora o menu) abre e fecha a grade de projetos, como
             o título das outras seções. Fora da página de projetos, a logo
             continua levando para lá. */}

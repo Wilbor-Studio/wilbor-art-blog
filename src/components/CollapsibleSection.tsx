@@ -66,6 +66,8 @@ export default function CollapsibleSection({
         type="button"
         onClick={() => setIsOpen(open => !open)}
         aria-expanded={isOpen}
+        // Faixas de título dividem a sobra da tela (useFillViewportBands).
+        data-band-row={size === 'title' ? '' : undefined}
         aria-controls={contentId}
         className={[
           // O tailwind.css dá borda, fundo, sombra e padding a todo <button>
@@ -74,7 +76,10 @@ export default function CollapsibleSection({
           // atravessando a seção — por isso o cromo é zerado explicitamente.
           'border-0 bg-transparent shadow-none rounded-none px-0',
           'group flex flex-1 min-w-0 items-center gap-3 text-left',
-          'py-4 sm:py-5',
+          // --band-extra: respiro somado quando a página não enche a tela.
+          size === 'title'
+            ? 'py-[calc(1rem+var(--band-extra,0px))] sm:py-[calc(1.25rem+var(--band-extra,0px))]'
+            : 'py-4 sm:py-5',
           // Cor forte fixa, sem mudar no hover: a maior parte do público
           // entra pelo iPhone e pelo iPad, onde hover não existe, e o
           // rótulo ficava sempre no cinza apagado.
@@ -133,7 +138,9 @@ export default function CollapsibleSection({
           />
         </svg>
       </button>
-      {action && <div className="shrink-0">{action}</div>}
+      {/* empty:hidden: o "editar" só aparece para o artista logado; sem
+          ele, o wrapper vazio ainda somava o gap e afastava a seta da borda. */}
+      {action && <div className="shrink-0 empty:hidden">{action}</div>}
       </div>
 
       <Collapse id={contentId} open={isOpen} keepMounted={keepMounted} className="pb-5">
