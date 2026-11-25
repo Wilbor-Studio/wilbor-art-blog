@@ -10,6 +10,7 @@ import ExhibitionsContent from '@/components/ExhibitionsContent';
 import PartnersContent from '@/components/PartnersContent';
 import SoundContent from '@/components/SoundContent';
 import ScrollReveal from '@/components/ScrollReveal';
+import ClosedBandsShimmer from '@/components/ClosedBandsShimmer';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { memo, useCallback, useEffect, useState } from 'react';
 import ProjectsClient from './ProjectsClient';
@@ -250,6 +251,7 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
         projectsOpen={projectsOpen}
         onToggleProjects={toggleProjects}
       />
+      <ClosedBandsShimmer gridOpen={projectsOpen} />
 
       <div className="flex flex-col w-full">
         {/* PROJETOS: a grade de cards. Recolhe tocando na faixa do header,

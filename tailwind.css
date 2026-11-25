@@ -436,6 +436,64 @@
   50% { box-shadow: 0 0 14px 1px rgb(255 255 255 / 0.14); }
 }
 
+/* Brilho das faixas com tudo fechado (ClosedBandsShimmer): uma de cada
+   vez, de cima para baixo, a faixa acende a partir do centro dela (luz de
+   dentro, por cima do fundo e por baixo do texto) e cresce um pouco. A
+   onda leva ~2s e se repete a cada 8s. */
+@property --glow-a {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+
+.band-glow {
+  --glow-rgb: 255 255 255;
+  --glow-max: 0.45;
+  /* Elipse do tamanho da faixa e queda suave: a luz toma o componente
+     quase inteiro, ainda um pouco mais forte no centro, e só some rente
+     às bordas. */
+  background-image: radial-gradient(
+    ellipse 145% 290% at 50% 50%,
+    rgb(var(--glow-rgb) / var(--glow-a)),
+    rgb(var(--glow-rgb) / calc(var(--glow-a) * 0.8)) 50%,
+    rgb(var(--glow-rgb) / calc(var(--glow-a) * 0.4)) 85%,
+    transparent 100%
+  );
+  animation: band-glow 8s ease-in-out infinite;
+  animation-delay: calc(1.5s + var(--glow-i, 0) * 0.22s);
+}
+
+.dark .band-glow {
+  --glow-max: 0.09;
+}
+
+/* O header é preto nos dois temas: a mesma luz fraca do escuro. */
+.band-glow:has(> [data-band-header]) {
+  --glow-max: 0.12;
+}
+
+.band-glow-relative {
+  position: relative;
+}
+
+@keyframes band-glow {
+  0%, 16%, 100% {
+    --glow-a: 0;
+    scale: 1;
+  }
+  7% {
+    --glow-a: var(--glow-max);
+    scale: 1.035;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .band-glow {
+    animation: none;
+    background-image: none;
+  }
+}
+
 /* Troca de tema (ThemeToggle): esmaecimento da página toda entre o tema
    antigo e o novo, mais lento que o padrão do navegador (250ms). */
 ::view-transition-old(root),
