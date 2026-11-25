@@ -105,15 +105,48 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
         return;
       }
 
-      // "CONTATO" no menu abre a caixa de mensagem do rodapé.
-      if (targetId === 'contact') window.dispatchEvent(new Event('wilbor:open-contact'));
-
       const targetElement = document.getElementById(targetId);
       if (targetElement) {
-        // Altura do header: 90px desktop, 64px mobile
-        const headerHeight = window.innerWidth >= 768 ? 90 : 64;
-        const yOffset = targetElement.getBoundingClientRect().top + window.pageYOffset - headerHeight;
+        // O menu funciona como sanfona: a seção tocada abre e as outras que
+        // estiverem abertas fecham (a grade de projetos fica de fora; ela é
+        // do header). Fechar uma seção acima faz a tocada subir durante a
+        // animação, então o destino da rolagem já desconta o conteúdo que
+        // vai recolher acima dela.
+        const targetTop = targetElement.getBoundingClientRect().top;
+        let collapsingAbove = 0;
+        document
+          .querySelectorAll<HTMLButtonElement>('section[id] button[data-band-row][aria-expanded="true"]')
+          .forEach(row => {
+            if (targetElement.contains(row)) return;
+            const content = document.getElementById(row.getAttribute('aria-controls') ?? '');
+            const box = content?.getBoundingClientRect();
+            if (box && box.top < targetTop) collapsingAbove += box.height;
+            row.click();
+          });
+
+        // Abre a tocada pela primeira faixa de título dela (a mesma que a
+        // pessoa tocaria), se estiver fechada. Em Exposições, abre
+        // Exposições e deixa Publicações como está.
+        const titleRow = targetElement.querySelector<HTMLButtonElement>('button[data-band-row]');
+        if (titleRow?.getAttribute('aria-expanded') === 'false') titleRow.click();
+
+        // Altura real do header (ele cresce com as faixas da página).
+        const headerHeight = document.querySelector('header')?.getBoundingClientRect().height
+          ?? (window.innerWidth >= 768 ? 90 : 64);
+        const yOffset = targetTop + window.pageYOffset - collapsingAbove - headerHeight;
         window.scrollTo({ top: yOffset, behavior: 'smooth' });
+        // Acabadas a rolagem e a animação, confere: imagens da grade
+        // carregando acima mudam a altura da página no caminho. Se a seção
+        // não parou embaixo do header e ainda dá para rolar, ajusta. (No fim
+        // da página não dá: a seção para onde a rolagem acaba.)
+        window.setTimeout(() => {
+          const drift = targetElement.getBoundingClientRect().top - headerHeight;
+          const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+          const canMove = drift > 0 ? window.scrollY < maxScroll - 1 : window.scrollY > 0;
+          if (Math.abs(drift) > 4 && canMove) {
+            window.scrollTo({ top: window.scrollY + drift, behavior: 'smooth' });
+          }
+        }, 900);
         // Atualiza a URL sem recarregar a página, preservando query params
         const url = new URL(window.location.href);
         const queryString = url.search;

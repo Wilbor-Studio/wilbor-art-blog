@@ -179,7 +179,8 @@ function StudioLogo({ src }: { src: string }) {
  * - "Contato": uma seção como as de cima (mesma coluna, título e seta,
  *   começa recolhida). Aberta, mostra a marca do estúdio, os ícones de
  *   contato (post "contato" do Hive) e a caixa de mensagem. Abre sozinha
- *   pelo "CONTATO" do menu ou chegando com #contact no link; o id fica na
+ *   pelo "CONTATO" do menu (como toda seção do menu) ou chegando com
+ *   #contact no link; o id fica na
  *   seção para o menu e o scroll spy caírem nela.
  * - A faixa final, o último degrau da escala de tons das seções (a mais
  *   clara, --tone-footer), com a assinatura (post "footer") centralizada.
@@ -219,11 +220,6 @@ export default function Footer() {
   // ao montar troca o hash pela seção visível e apagaria o #contact.
   useLayoutEffect(() => {
     if (window.location.hash === '#contact') setContactOpen(true);
-  }, []);
-  useEffect(() => {
-    const open = () => setContactOpen(true);
-    window.addEventListener('wilbor:open-contact', open);
-    return () => window.removeEventListener('wilbor:open-contact', open);
   }, []);
 
   return (
