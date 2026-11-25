@@ -317,22 +317,31 @@
     overflow-x: clip !important;
     width: 100%;
     max-width: 100vw;
-    /* Scrollbar personalizada */
-    scrollbar-width: auto;
   }
+  /* Barra de rolagem: 12px de trilho e 8px de barra visível (a borda
+     transparente afina a barra sem diminuir a área de pegar). Antes eram
+     22px. Nada de scrollbar-width/scrollbar-color fora do Firefox: no
+     Chrome eles desligam estas regras ::-webkit-scrollbar. */
   html::-webkit-scrollbar, body::-webkit-scrollbar {
-    width: 22px;
+    width: 12px;
     background: #222;
   }
   html::-webkit-scrollbar-thumb, body::-webkit-scrollbar-thumb {
     background: #888;
-    border-radius: 11px;
+    background-clip: padding-box;
+    border: 2px solid transparent;
+    border-radius: 6px;
   }
   html::-webkit-scrollbar-thumb:hover, body::-webkit-scrollbar-thumb:hover {
     background: #555;
+    background-clip: padding-box;
   }
-  html, body {
-    scrollbar-width: thick;
+  /* Firefox não lê ::-webkit-scrollbar; lá, a versão fina do sistema. */
+  @supports (-moz-appearance: none) {
+    html {
+      scrollbar-width: thin;
+      scrollbar-color: #888 #222;
+    }
   }
   * {
     box-sizing: border-box;
