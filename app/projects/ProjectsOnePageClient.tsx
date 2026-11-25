@@ -3,6 +3,7 @@
 import ViewSwitcher, { SwitcherSelection } from '@/app/ViewSwitcher';
 import About from '@/app/about/page';
 import { PATH_GRID } from '@/app/paths';
+import Collapse from '@/components/Collapse';
 import ExhibitionsContent from '@/components/ExhibitionsContent';
 import PartnersContent from '@/components/PartnersContent';
 import SoundContent from '@/components/SoundContent';
@@ -20,7 +21,7 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
   const [activeSection, setActiveSection] = useState<SwitcherSelection>('projects');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   // A grade começa aberta (é a vitrine do site) e pode ser recolhida pelo
-  // botão da grade no header. Abre sozinha quando a pessoa escolhe uma tag,
+  // toque na faixa do header. Abre sozinha quando a pessoa escolhe uma tag,
   // chega por link de projeto ou toca em "PROJETOS" no menu.
   const [projectsOpen, setProjectsOpen] = useState(true);
   const toggleProjects = useCallback(() => {
@@ -221,21 +222,21 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
       />
 
       <div className="flex flex-col w-full">
-        {/* PROJETOS: a grade de cards. Recolhe pelo botão da grade no header,
+        {/* PROJETOS: a grade de cards. Recolhe tocando na faixa do header,
             sem título na página. Fechada, só esconde (não desmonta): projeto
             aberto e filtro continuam onde estavam ao reabrir. */}
         <section
           id="projects"
-          className={`w-full bg-white dark:bg-neutral-950 ${projectsOpen ? 'min-h-screen pt-6 md:pt-8' : ''}`}
+          className="w-full bg-white dark:bg-neutral-950"
         >
-          <div id="projects-grid" hidden={!projectsOpen} className={projectsOpen ? 'animate-fade-in' : undefined}>
+          <Collapse id="projects-grid" open={projectsOpen} keepMounted className="min-h-screen pt-6 md:pt-8">
             <MemoizedProjectsClient
               {...projectsProps}
               hideSwitcher={true}
               externalSelectedTag={selectedTag}
               onTagChange={handleTagChange}
             />
-          </div>
+          </Collapse>
         </section>
 
         {/* ABOUT COMO SEÇÃO DA LANDING */}

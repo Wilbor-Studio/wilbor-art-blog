@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useState } from 'react';
+import Collapse from '@/components/Collapse';
 
 /**
  * Bloco recolhível: mostra só o rótulo e expande o conteúdo quando a pessoa
@@ -115,7 +116,7 @@ export default function CollapsibleSection({
 
         <svg
           className={[
-            'ml-auto h-5 w-5 shrink-0 transition-transform duration-200',
+            'ml-auto h-5 w-5 shrink-0 transition-transform duration-500 ease-in-out',
             // Fechado aponta para o rótulo (esquerda); aberto, para o conteúdo.
             isOpen ? '' : 'rotate-90',
           ].join(' ')}
@@ -135,15 +136,9 @@ export default function CollapsibleSection({
       {action && <div className="shrink-0">{action}</div>}
       </div>
 
-      {keepMounted ? (
-        <div id={contentId} hidden={!isOpen} className={isOpen ? 'pb-5 animate-fade-in' : undefined}>
-          {children}
-        </div>
-      ) : isOpen && (
-        <div id={contentId} className="pb-5 animate-fade-in">
-          {children}
-        </div>
-      )}
+      <Collapse id={contentId} open={isOpen} keepMounted={keepMounted} className="pb-5">
+        {children}
+      </Collapse>
     </div>
   );
 }

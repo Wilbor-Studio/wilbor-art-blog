@@ -1,6 +1,7 @@
 'use client';
 
 import AdminLoginLink from '@/admin/AdminLoginLink';
+import Collapse from '@/components/Collapse';
 import FooterContactForm from '@/components/FooterContactForm';
 import EditPostButton, { SECTION_EDIT_CLASS } from '@/admin/EditPostButton';
 import ImageCarousel from '@/components/ImageCarousel';
@@ -252,13 +253,13 @@ export default function Footer() {
               </div>
 
               {/* Recolhida só esconde: a mensagem já digitada não se perde. */}
-              <div id="footer-contact-form" hidden={!formOpen} className={formOpen ? 'animate-fade-in' : undefined}>
+              <Collapse id="footer-contact-form" open={formOpen} keepMounted>
                 <FooterContactForm
                   targets={contactTargets}
                   className="w-full"
                   showLabel={false}
                 />
-              </div>
+              </Collapse>
 
               {contactPost && (
                 <div className="mt-3 flex justify-center md:justify-end">
