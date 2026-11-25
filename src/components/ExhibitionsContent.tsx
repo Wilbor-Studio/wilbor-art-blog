@@ -4,6 +4,7 @@ import { getAllPostsByBlog, getUserAccount } from "@/../lib/hive/hive-client";
 import EditPostButton, { SECTION_EDIT_CLASS } from '@/admin/EditPostButton';
 import Markdown from "@/components/Markdown";
 import CollapsibleSection from '@/components/CollapsibleSection';
+import SectionBanner from '@/components/SectionBanner';
 import { TEXT_SECTION_INNER, TEXT_SECTION_SHELL } from '@/components/textSection';
 import { normalizeExhibitionMarkdown, splitExhibitionSections } from '@/utility/exhibition-markdown';
 import Image from 'next/image';
@@ -220,6 +221,11 @@ export default function ExhibitionsContent() {
                             />
                           }
                         >
+                          {/* Imagem de abertura (Exposições ou Publicações). */}
+                          <SectionBanner
+                            slot={/publica/i.test(section.title) ? 'publications' : 'exhibitions'}
+                            alt={section.title}
+                          />
                           <Markdown className="exhibition-content" removeMedia>
                             {section.body}
                           </Markdown>

@@ -39,10 +39,24 @@ export interface SectionTitles {
   sound: string;
 }
 
+/**
+ * Imagem de abertura de cada seção (endereço da imagem, 1920×1080). Vazio:
+ * a seção ainda não tem imagem; o artista logado vê um placeholder no lugar.
+ */
+export interface SectionImages {
+  exhibitions: string;
+  publications: string;
+  sound: string;
+  partners: string;
+}
+
+export type SectionImageSlot = keyof SectionImages;
+
 export interface SiteConfig {
   banner: BannerConfig;
   seo: SeoConfig;
   sectionTitles: SectionTitles;
+  sectionImages: SectionImages;
 }
 
 /** Valores usados enquanto o artista não personalizar nada. */
@@ -62,6 +76,12 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
     about: 'Sobre Wilbor',
     partners: 'Parceiros',
     sound: 'Bota o som',
+  },
+  sectionImages: {
+    exhibitions: '',
+    publications: '',
+    sound: '',
+    partners: '',
   },
 };
 
@@ -86,6 +106,10 @@ export function parseSiteConfig(body?: string | null): SiteConfig {
       sectionTitles: {
         ...DEFAULT_SITE_CONFIG.sectionTitles,
         ...parsed.sectionTitles,
+      },
+      sectionImages: {
+        ...DEFAULT_SITE_CONFIG.sectionImages,
+        ...parsed.sectionImages,
       },
     };
   } catch {

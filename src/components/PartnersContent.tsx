@@ -3,6 +3,7 @@
 import { getAllPostsByBlog, getUserAccount } from "@/../lib/hive/hive-client";
 import EditPostButton, { SECTION_EDIT_CLASS } from '@/admin/EditPostButton';
 import CollapsibleSection from '@/components/CollapsibleSection';
+import SectionBanner from '@/components/SectionBanner';
 import { TEXT_SECTION_INNER, TEXT_SECTION_SHELL } from '@/components/textSection';
 import Markdown from "@/components/Markdown";
 import { useSiteConfig } from '@/lib/hive/useSiteConfig';
@@ -176,6 +177,7 @@ export default function PartnersContent() {
               />
             )}
           >
+          <SectionBanner slot="partners" alt={siteConfig.sectionTitles.partners} />
           {!loading && !error && hivePosts.length > 0 && (
             <div>
               {hivePosts.map((post, index) => {

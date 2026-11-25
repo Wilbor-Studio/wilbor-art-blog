@@ -4,6 +4,7 @@ import EditSiteContentButton from '@/admin/EditSiteContentButton';
 import { useHiveAuth } from '@/admin/HiveAuthProvider';
 import CollapsibleSection from '@/components/CollapsibleSection';
 import Markdown from '@/components/Markdown';
+import SectionBanner from '@/components/SectionBanner';
 import { TEXT_SECTION_INNER, TEXT_SECTION_SHELL } from '@/components/textSection';
 import { PERMLINK_SOUND } from '@/lib/hive/site-content';
 import { useSiteConfig } from '@/lib/hive/useSiteConfig';
@@ -89,6 +90,7 @@ export default function SoundContent() {
               />
             }
           >
+            <SectionBanner slot="sound" alt={title} />
             {/* Mesma cor de texto das outras seções (Sobre, Parceiros). */}
             <Markdown {...SOUND_MARKDOWN_PROPS}>{published}</Markdown>
           </CollapsibleSection>
