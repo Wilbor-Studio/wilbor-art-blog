@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { FaWhatsapp } from 'react-icons/fa';
+import { HiOutlineMail } from 'react-icons/hi';
 import {
   buildMailtoUrl,
   buildWhatsAppUrl,
@@ -43,35 +45,37 @@ export default function FooterContactForm({
     ? `${message.trim()}\n\n— ${name.trim()}`
     : message.trim();
 
+  // contact-button (tailwind.css): um feixe de luz percorre a borda o tempo
+  // todo, com ou sem mensagem.
   const buttonBase = [
-    'flex-1 rounded-md px-3 py-2',
+    'contact-button flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2.5',
     'font-mono text-[11px] uppercase tracking-wider',
-    'border transition-colors text-center',
+    'border transition-colors',
   ].join(' ');
 
   const enabled = [
-    'border-neutral-300 text-neutral-600',
-    'hover:border-neutral-900 hover:text-neutral-900',
-    'dark:border-neutral-700 dark:text-neutral-300',
-    'dark:hover:border-neutral-100 dark:hover:text-neutral-100',
+    'border-neutral-500 text-neutral-800',
+    'hover:border-neutral-900 hover:text-neutral-950',
+    'dark:border-neutral-400 dark:text-neutral-100',
+    'dark:hover:border-white dark:hover:text-white',
   ].join(' ');
 
   // Antes da mensagem os botões ficam legíveis, só sem ação: apagados demais
   // eles pareciam quebrados.
   const disabled = [
     'pointer-events-none',
-    'border-neutral-300 text-neutral-400',
-    'dark:border-neutral-800 dark:text-neutral-500',
+    'border-neutral-400 text-neutral-500',
+    'dark:border-neutral-600 dark:text-neutral-400',
   ].join(' ');
 
   return (
-    <div className={`${className} text-left`}>
+    <div className={`${className} text-center`}>
       <label
         htmlFor="footer-message"
         className={showLabel
           ? [
-            'block font-mono text-[10px] uppercase tracking-[0.18em]',
-            'text-neutral-500 dark:text-neutral-400 mb-2',
+            'block font-mono text-sm sm:text-base uppercase tracking-[0.18em]',
+            'text-neutral-700 dark:text-neutral-200 mb-3',
           ].join(' ')
           : 'sr-only'}
       >
@@ -85,7 +89,7 @@ export default function FooterContactForm({
         placeholder="Seu nome (opcional)"
         aria-label="Seu nome"
         className={[
-          'mb-2 w-full rounded-md px-3 py-2 text-sm',
+          'mb-2 w-full rounded-md px-3 py-2 text-left text-sm',
           'border bg-white/70 dark:bg-neutral-950',
           'border-neutral-300 dark:border-neutral-800',
           'placeholder:text-neutral-400 dark:placeholder:text-neutral-600',
@@ -101,7 +105,7 @@ export default function FooterContactForm({
         rows={3}
         placeholder="Escreva sua mensagem…"
         className={[
-          'mb-3 w-full resize-y rounded-md px-3 py-2 text-sm',
+          'mb-3 w-full resize-y rounded-md px-3 py-2 text-left text-sm',
           'border bg-white/70 dark:bg-neutral-950',
           'border-neutral-300 dark:border-neutral-800',
           'placeholder:text-neutral-400 dark:placeholder:text-neutral-600',
@@ -119,6 +123,7 @@ export default function FooterContactForm({
             aria-disabled={!hasMessage}
             className={`${buttonBase} ${hasMessage ? enabled : disabled}`}
           >
+            <FaWhatsapp aria-hidden="true" className="size-4 shrink-0" />
             WhatsApp
           </a>
         )}
@@ -131,16 +136,11 @@ export default function FooterContactForm({
             aria-disabled={!hasMessage}
             className={`${buttonBase} ${hasMessage ? enabled : disabled}`}
           >
+            <HiOutlineMail aria-hidden="true" className="size-4 shrink-0" />
             E-mail
           </a>
         )}
       </div>
-
-      <p className="mt-2 text-[10px] text-neutral-400 dark:text-neutral-600">
-        {hasMessage
-          ? 'Abre o WhatsApp ou seu app de e-mail com a mensagem pronta.'
-          : 'Escreva a mensagem e escolha por onde enviar.'}
-      </p>
     </div>
   );
 }

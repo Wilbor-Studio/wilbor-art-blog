@@ -13,6 +13,11 @@ import { getAllPostsByBlog, getUserAccount } from '@/../lib/hive/hive-client';
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { extractContactTargets, type ContactTargets } from '@/utility/contact-targets';
 
+// Logo do estúdio na seção Contato: escondida por enquanto, a pedido do
+// artista. O componente e a imagem do post continuam no projeto; para trazer
+// de volta, basta voltar para true.
+const SHOW_STUDIO_LOGO: boolean = false;
+
 const TITLE_KEYWORDS = [
   'rodape',
   'rodapé',
@@ -201,6 +206,7 @@ export default function Footer() {
 
   const footerPost = !loading && !error ? posts[0] : undefined;
   const logo = footerPost ? extractImagesFromPost(footerPost)[0] : undefined;
+  const shownLogo = SHOW_STUDIO_LOGO ? logo : undefined;
   const hasForm = Boolean(contactTargets.whatsapp || contactTargets.email);
 
   const { isAdmin, isReady } = useHiveAuth();
@@ -252,20 +258,27 @@ export default function Footer() {
                 <div
                   className={[
                     'grid items-start gap-8 pt-2',
-                    'md:grid-cols-[auto_minmax(0,1fr)] md:gap-12',
-                  ].join(' ')}
+                    shownLogo && 'md:grid-cols-[auto_minmax(0,1fr)] md:gap-12',
+                  ].filter(Boolean).join(' ')}
                 >
                   {/* Marca */}
-                  <div className="flex justify-center md:justify-start">
-                    {logo && <StudioLogo src={logo.src} />}
-                  </div>
+                  {shownLogo && (
+                    <div className="flex justify-center md:justify-start">
+                      <StudioLogo src={shownLogo.src} />
+                    </div>
+                  )}
 
                   {/* Ícones de contato e caixa de mensagem */}
                   <div className="flex w-full flex-col gap-6">
                     {contactPost && (
-                      // O post traz o próprio CSS, com a lista centralizada; no desktop
-                      // ela acompanha a coluna, alinhada à esquerda.
-                      <div className="footer-contact flex justify-center md:justify-start md:[&_.contato-lista]:!justify-start">
+                      // O post traz o próprio CSS, com a lista centralizada.
+                      <div
+                        className={[
+                          'footer-contact flex justify-center',
+                          // Com a logo ao lado, a lista acompanha a coluna.
+                          shownLogo && 'md:justify-start md:[&_.contato-lista]:!justify-start',
+                        ].filter(Boolean).join(' ')}
+                      >
                         <Markdown className="markdown-contact">
                           {formatContactBody(contactPost.body)}
                         </Markdown>
@@ -274,7 +287,7 @@ export default function Footer() {
                     {hasForm && (
                       <FooterContactForm
                         targets={contactTargets}
-                        className="w-full max-w-xl md:mx-0 mx-auto"
+                        className={`mx-auto w-full max-w-xl ${shownLogo ? 'md:mx-0' : ''}`}
                       />
                     )}
                   </div>

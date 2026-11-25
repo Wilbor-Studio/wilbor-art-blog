@@ -436,9 +436,48 @@
   50% { box-shadow: 0 0 14px 1px rgb(255 255 255 / 0.14); }
 }
 
+/* Botões WhatsApp / E-mail do Contato (efeito "border beam"): um feixe de
+   luz na cor do texto dá a volta na borda o tempo todo.
+   O ::before cobre exatamente a borda de 1px; a máscara recorta o miolo,
+   e o gradiente cônico gira com o ângulo animado via @property. */
+@property --contact-beam-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.contact-button {
+  position: relative;
+  isolation: isolate;
+}
+
+.contact-button::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  padding: 1px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--contact-beam-angle),
+    transparent 0deg 270deg,
+    currentColor 330deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: contact-beam-spin 3.2s linear infinite;
+}
+
+@keyframes contact-beam-spin {
+  to { --contact-beam-angle: 360deg; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .artist-door-cursor,
-  .artist-door-button {
+  .artist-door-button,
+  .contact-button::before {
     animation: none;
   }
 }
