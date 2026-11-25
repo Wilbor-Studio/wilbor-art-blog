@@ -9,7 +9,17 @@ import SignatureDark from '../../public/wilborPhotos/Assinatura Escura.png';
 import HeaderBgLight from '../../public/wilborPhotos/Fundo header claro 2.png';
 import HeaderBgDark from '../../public/wilborPhotos/Fundo header escuro 2.png';
 
-export default function BannerWilborSwitcher({ forceWhiteLogo = false }: { forceWhiteLogo?: boolean } = {}) {
+export default function BannerWilborSwitcher({
+  forceWhiteLogo = false,
+  onClick,
+  expanded,
+}: {
+  forceWhiteLogo?: boolean
+  /** Substitui a ida para /projects (ex.: abrir e fechar a grade). */
+  onClick?: () => void
+  /** Com onClick, estado da grade que ele controla (aria-expanded). */
+  expanded?: boolean
+} = {}) {
   const router = useRouter();
   const { theme, systemTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -36,7 +46,17 @@ export default function BannerWilborSwitcher({ forceWhiteLogo = false }: { force
 
   return (
     <div
-      onClick={handleGoProjects}
+      onClick={onClick ?? handleGoProjects}
+      {...(onClick && {
+        role: 'button',
+        tabIndex: 0,
+        'aria-expanded': expanded,
+        'aria-controls': 'projects-grid',
+        'aria-label': expanded ? 'Recolher projetos' : 'Mostrar projetos',
+        onKeyDown: (e: React.KeyboardEvent) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); }
+        },
+      })}
       className={`relative ${forceWhiteLogo ? 'h-full w-full' : 'h-20 sm:h-32 w-full max-w-[460px]'} cursor-pointer hover:opacity-90 transition-opacity`}
       style={{
         cursor: 'pointer',

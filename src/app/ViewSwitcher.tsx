@@ -30,7 +30,7 @@ export default function ViewSwitcher({
     setSelectedTag?: (tag: string | null) => void;
   }
   onMenuItemClick?: (href: string) => void;
-  /** Grade de projetos aberta? Com onToggleProjects, mostra o botão da grade no header. */
+  /** Grade de projetos aberta? Com onToggleProjects, a faixa do header abre e fecha a grade. */
   projectsOpen?: boolean;
   onToggleProjects?: () => void;
 }) {
@@ -137,14 +137,6 @@ export default function ViewSwitcher({
     onMenuItemClick,
   };
 
-  const controlButton = [
-    'flex h-11 w-11 items-center justify-center rounded-full border-0 p-0 shadow-none',
-    // Mesma cor do ícone do menu (IconMenu: text-gray-500).
-    'bg-transparent text-gray-500 transition-colors',
-    'hover:bg-black/5 dark:hover:bg-white/10',
-    'focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500',
-  ].join(' ');
-
   return (
     // Um header só, fixo no topo: logo à esquerda e controles dentro da
     // faixa, à direita. Antes o menu era uma caixa branca solta, fixa sobre
@@ -158,63 +150,34 @@ export default function ViewSwitcher({
         transform: headerHidden ? 'translateY(-100%)' : undefined,
       }}
     >
-      <div className="relative flex h-16 w-full items-center md:h-[90px]">
-        <div className="h-full min-w-0 flex-1 overflow-hidden">
-          <div className="relative flex h-full w-full items-center">
-            <BannerWilborSwitcher forceWhiteLogo />
-          </div>
+      <div className="relative h-16 w-full md:h-[90px]">
+        {/* A faixa toda (fora o menu) abre e fecha a grade de projetos, como
+            o título das outras seções. Fora da página de projetos, a logo
+            continua levando para lá. */}
+        <div className="h-full w-full overflow-hidden">
+          <BannerWilborSwitcher
+            forceWhiteLogo
+            onClick={onToggleProjects}
+            expanded={onToggleProjects ? Boolean(projectsOpen) : undefined}
+          />
         </div>
 
-        <div className="relative z-10 flex shrink-0 items-center gap-1 pl-2 pr-2 md:gap-2 md:pr-6">
-          {onToggleProjects && (
-            <button
-              type="button"
-              onClick={onToggleProjects}
-              aria-pressed={Boolean(projectsOpen)}
-              aria-controls="projects-grid"
-              aria-label={projectsOpen ? 'Recolher projetos' : 'Mostrar projetos'}
-              title={projectsOpen ? 'Recolher projetos' : 'Mostrar projetos'}
-              className={controlButton}
-            >
-              <GridToggleIcon open={Boolean(projectsOpen)} />
-            </button>
-          )}
-          {/* O botão do menu no celular tem 64px de largura próprios. */}
-          <div className="flex h-11 items-center md:hidden">
-            <DrawerTagsMobile {...drawerProps} />
-          </div>
-          <div className="hidden h-11 w-11 md:block">
-            <DrawerTagsDesktop {...drawerProps} />
+        {/* O menu fica na mesma coluna do conteúdo das seções (mesmo padding
+            e largura máxima de textSection), com o centro do ícone alinhado
+            ao centro das setas de abrir/fechar. */}
+        <div className="pointer-events-none absolute inset-0 z-10 px-4 sm:px-8 md:px-12">
+          <div className="mx-auto flex h-full w-full max-w-4xl items-center justify-end">
+            {/* Botão de 64px com -mr-4 próprio: centro 16px antes da borda. */}
+            <div className="pointer-events-auto -mr-1.5 flex h-11 items-center md:hidden">
+              <DrawerTagsMobile {...drawerProps} />
+            </div>
+            {/* Botão de 44px: centro 22px antes da borda. */}
+            <div className="pointer-events-auto -mr-3 hidden h-11 w-11 md:block">
+              <DrawerTagsDesktop {...drawerProps} />
+            </div>
           </div>
         </div>
       </div>
     </header>
-  );
-}
-
-/** Ícone da grade de projetos: aberta, quatro blocos cheios; recolhida, só o contorno. */
-function GridToggleIcon({ open }: { open: boolean }) {
-  return (
-    <svg className="h-7 w-7 md:h-6 md:w-6" viewBox="0 0 24 24" aria-hidden="true">
-      {open
-        // Aberta: quadrados cheios, com espaço entre eles.
-        ? [[4, 4], [13.5, 4], [4, 13.5], [13.5, 13.5]].map(([x, y]) => (
-          <rect key={`${x}-${y}`} x={x} y={y} width="6.5" height="6.5" rx="1" fill="currentColor" />
-        ))
-        // Recolhida: só o contorno.
-        : [[4.5, 4.5], [14, 4.5], [4.5, 14], [14, 14]].map(([x, y]) => (
-          <rect
-            key={`${x}-${y}`}
-            x={x}
-            y={y}
-            width="5.5"
-            height="5.5"
-            rx="1"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-          />
-        ))}
-    </svg>
   );
 }
