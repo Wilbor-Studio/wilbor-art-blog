@@ -4,6 +4,7 @@ import EditSiteContentButton from '@/admin/EditSiteContentButton';
 import { useHiveAuth } from '@/admin/HiveAuthProvider';
 import CollapsibleSection from '@/components/CollapsibleSection';
 import Markdown from '@/components/Markdown';
+import { embedMusicLinks } from '@/utility/music-embed';
 import SectionBanner from '@/components/SectionBanner';
 import { TEXT_SECTION_INNER, TEXT_SECTION_SHELL } from '@/components/textSection';
 import { PERMLINK_SOUND } from '@/lib/hive/site-content';
@@ -92,7 +93,9 @@ export default function SoundContent() {
           >
             <SectionBanner slot="sound" alt={title} />
             {/* Mesma cor de texto das outras seções (Sobre, Parceiros). */}
-            <Markdown {...SOUND_MARKDOWN_PROPS}>{published}</Markdown>
+            {/* Link de playlist cru (post salvo antes de o editor converter)
+                vira o player, com o link para o app logo abaixo. */}
+            <Markdown {...SOUND_MARKDOWN_PROPS}>{embedMusicLinks(published)}</Markdown>
           </CollapsibleSection>
         ) : (
           // Só o artista chega aqui: a seção ainda não foi publicada. O
