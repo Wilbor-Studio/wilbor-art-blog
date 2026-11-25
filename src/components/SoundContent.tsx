@@ -11,7 +11,7 @@ import { useSitePost } from '@/lib/hive/useSitePost';
 
 /**
  * Ponto de partida do editor na primeira vez. Link sozinho numa linha vira
- * player ao publicar (Spotify, SoundCloud, YouTube, Vimeo).
+ * player ao publicar (Spotify, SoundCloud, Apple Music, YouTube, Vimeo).
  */
 export const STARTER_MARKDOWN = [
   'Escreva aqui uma apresentação curta, se quiser.',
@@ -20,6 +20,12 @@ export const STARTER_MARKDOWN = [
   '',
   'https://open.spotify.com/playlist/…',
 ].join('\n');
+
+/**
+ * Como o texto da seção é exibido, no site e no preview do editor: sem a
+ * classe das Exposições e com as quebras de linha que o artista digitou.
+ */
+const SOUND_MARKDOWN_PROPS = { className: '', preserveLineBreaks: true };
 
 /**
  * Seção "Bota o som": players e links de música escolhidos pelo artista.
@@ -79,11 +85,12 @@ export default function SoundContent() {
                 title="bota o som"
                 currentMarkdown={published}
                 fallbackMarkdown={STARTER_MARKDOWN}
+                previewMarkdownProps={SOUND_MARKDOWN_PROPS}
               />
             }
           >
             {/* Mesma cor de texto das outras seções (Sobre, Parceiros). */}
-            <Markdown>{published}</Markdown>
+            <Markdown {...SOUND_MARKDOWN_PROPS}>{published}</Markdown>
           </CollapsibleSection>
         ) : (
           // Só o artista chega aqui: a seção ainda não foi publicada. O
@@ -108,6 +115,7 @@ export default function SoundContent() {
               // editar); senão, cria o post.
               currentMarkdown={body}
               fallbackMarkdown={STARTER_MARKDOWN}
+              previewMarkdownProps={SOUND_MARKDOWN_PROPS}
               label="criar seção"
             />
           </div>

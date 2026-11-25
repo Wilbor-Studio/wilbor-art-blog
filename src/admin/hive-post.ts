@@ -83,6 +83,7 @@ export function transformExternalMedia(markdown: string) {
   const videoFilePattern = /\.(mp4|webm|mov|m4v|ogg)(\?.*)?$/i;
   const spotifyPattern = /open\.spotify\.com\/(?:intl-[a-z-]+\/)?(track|album|playlist|episode|show|artist)\/([a-zA-Z0-9]+)/i;
   const soundcloudPattern = /^https?:\/\/(?:www\.|m\.)?soundcloud\.com\/[^\s]+$/i;
+  const appleMusicPattern = /^https?:\/\/music\.apple\.com\/([^\s]+)$/i;
 
   return markdown
     .split('\n')
@@ -111,6 +112,11 @@ export function transformExternalMedia(markdown: string) {
       if (soundcloudPattern.test(trimmed)) {
         const url = encodeURIComponent(trimmed.split('?')[0]);
         return `<iframe src="https://w.soundcloud.com/player/?url=${url}&color=%23111111&visual=false" allow="autoplay" loading="lazy" frameborder="0"></iframe>`;
+      }
+
+      const appleMusicMatch = trimmed.match(appleMusicPattern);
+      if (appleMusicMatch) {
+        return `<iframe src="https://embed.music.apple.com/${appleMusicMatch[1]}" allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" loading="lazy" frameborder="0"></iframe>`;
       }
 
       if (videoFilePattern.test(trimmed)) {

@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { SECTION_EDIT_CLASS } from './EditPostButton';
 import { useHiveAuth } from './HiveAuthProvider';
-import HivePostEditor from './HivePostEditor';
+import HivePostEditor, { type HivePostEditorProps } from './HivePostEditor';
 
 /**
  * Edita um trecho do site que não é um post comum — o resumo da seção
@@ -23,6 +23,7 @@ export default function EditSiteContentButton({
   tags = ['site'],
   label = 'editar',
   onSaved,
+  previewMarkdownProps,
 }: {
   permlink: string
   /** Título do post no Hive; não aparece no site. */
@@ -34,6 +35,8 @@ export default function EditSiteContentButton({
   tags?: string[]
   label?: string
   onSaved?: () => void
+  /** Repassado ao editor para o preview seguir o estilo da seção. */
+  previewMarkdownProps?: HivePostEditorProps['previewMarkdownProps']
 }) {
   const { isAdmin, isReady } = useHiveAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -75,6 +78,7 @@ export default function EditSiteContentButton({
           initialTitle={title}
           initialContent={currentMarkdown || fallbackMarkdown}
           initialTags={tags}
+          previewMarkdownProps={previewMarkdownProps}
           onClose={() => setIsOpen(false)}
           onSaved={() => {
             onSaved?.();

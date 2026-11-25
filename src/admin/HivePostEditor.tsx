@@ -44,6 +44,11 @@ export interface HivePostEditorProps {
   initialTags?: string[];
   initialImages?: string[];
   initialThumbnail?: string;
+  /**
+   * Como o conteúdo é exibido na seção onde ele aparece, para o preview
+   * ficar igual ao site. Sem isso, usa o estilo das Exposições.
+   */
+  previewMarkdownProps?: { className?: string; preserveLineBreaks?: boolean };
 }
 
 /**
@@ -66,6 +71,7 @@ export default function HivePostEditor({
   initialTags = [],
   initialImages = [],
   initialThumbnail,
+  previewMarkdownProps,
 }: HivePostEditorProps) {
   const { username, postingKey } = useHiveAuth();
 
@@ -496,7 +502,7 @@ export default function HivePostEditor({
                   </span>
                 </div>
                 <div className="flex-1 overflow-auto px-4 py-3">
-                  <Markdown className="exhibition-content">
+                  <Markdown className="exhibition-content" {...previewMarkdownProps}>
                     {transformExternalMedia(content) || '*Nada para mostrar ainda*'}
                   </Markdown>
                 </div>
