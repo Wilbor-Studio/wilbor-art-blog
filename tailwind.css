@@ -413,3 +413,32 @@
     color: #888888 !important;
   }
 }
+
+/*
+ * Porta do artista (ArtistDoor), o easter egg do rodapé: cursor de
+ * terminal piscando e o botão de entrar com um brilho que respira.
+ */
+.artist-door-cursor {
+  animation: artist-door-blink 1s steps(1) infinite;
+}
+
+.artist-door-button {
+  animation: artist-door-glow 2.8s ease-in-out infinite;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+@keyframes artist-door-blink {
+  50% { opacity: 0; }
+}
+
+@keyframes artist-door-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(255 255 255 / 0); }
+  50% { box-shadow: 0 0 14px 1px rgb(255 255 255 / 0.14); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .artist-door-cursor,
+  .artist-door-button {
+    animation: none;
+  }
+}

@@ -1,6 +1,9 @@
 'use client';
 
-import AdminLoginLink from '@/admin/AdminLoginLink';
+import { useHiveAuth } from '@/admin/HiveAuthProvider';
+import ArtistDoor from '@/components/ArtistDoor';
+import Collapse from '@/components/Collapse';
+import useBottomPushReveal from '@/components/useBottomPushReveal';
 import CollapsibleSection from '@/components/CollapsibleSection';
 import FooterContactForm from '@/components/FooterContactForm';
 import EditPostButton, { SECTION_EDIT_CLASS } from '@/admin/EditPostButton';
@@ -179,8 +182,11 @@ function StudioLogo({ src }: { src: string }) {
  *   pelo "CONTATO" do menu ou chegando com #contact no link; o id fica na
  *   seção para o menu e o scroll spy caírem nela.
  * - A faixa final, o último degrau da escala de tons das seções (a mais
- *   clara, --tone-footer): a assinatura (post "footer") centralizada e a
- *   entrada do artista à direita.
+ *   clara, --tone-footer), com a assinatura (post "footer") centralizada.
+ * - Escondida abaixo dela, a entrada do artista: só aparece para quem, já
+ *   no fim da página, insiste em rolar mais 5 vezes seguidas (easter egg,
+ *   useBottomPushReveal). A cada visita é preciso repetir; logado, o
+ *   artista usa a barra dele e a faixa não existe.
  */
 export default function Footer() {
   const username = process.env.NEXT_PUBLIC_HIVE_USERNAME || '';
@@ -195,6 +201,18 @@ export default function Footer() {
   const footerPost = !loading && !error ? posts[0] : undefined;
   const logo = footerPost ? extractImagesFromPost(footerPost)[0] : undefined;
   const hasForm = Boolean(contactTargets.whatsapp || contactTargets.email);
+
+  const { isAdmin, isReady } = useHiveAuth();
+  const canLogIn = isReady && !isAdmin;
+  const [loginRevealed, setLoginRevealed] = useState(false);
+  useBottomPushReveal(() => {
+    setLoginRevealed(true);
+    // Depois que a faixa termina de deslizar (Collapse: 500ms), leva a
+    // página até ela.
+    setTimeout(() => {
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+    }, 550);
+  }, { enabled: canLogIn && !loginRevealed });
 
   const [contactOpen, setContactOpen] = useState(false);
   // Layout effect: roda antes do scroll spy da página (useEffect), que logo
@@ -271,8 +289,8 @@ export default function Footer() {
         </div>
       </section>
 
-      {/* Faixa final: assinatura no centro, entrada do artista à direita. A
-          coluna da esquerda tem a mesma largura da direita, senão a
+      {/* Faixa final: assinatura no centro. A coluna da direita fica vazia
+          com a mesma largura da esquerda ("editar rodapé"), senão a
           assinatura sairia do centro. */}
       <div className="w-full bg-[var(--tone-footer)] text-neutral-600 dark:text-neutral-400">
         <div className="mx-auto max-w-6xl px-4 sm:px-8 md:px-12">
@@ -282,8 +300,7 @@ export default function Footer() {
               TEXT_SECTION_INNER,
               // Mesma altura de uma seção fechada (82px no celular, 98px a
               // partir do sm), com a área segura de baixo do iPhone somada.
-              // Uma linha só em qualquer tela: no celular, empilhar
-              // assinatura e "Entrar" passava dessa altura.
+              // Uma linha só em qualquer tela.
               'grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-6',
               // --band-extra: o mesmo respiro das faixas de título quando a
               // página não enche a tela (useFillViewportBands).
@@ -304,12 +321,29 @@ export default function Footer() {
             <div className="text-center [&_p]:!m-0 [&_p]:!text-xs [&_p]:!tracking-wide [&_.markdown-content-custom]:!text-center">
               {footerPost && <Markdown removeMedia>{footerPost.body}</Markdown>}
             </div>
-            <div className="flex justify-end">
-              <AdminLoginLink />
-            </div>
+            <div aria-hidden="true" />
           </div>
         </div>
       </div>
+
+      {/* Easter egg: a entrada do artista, revelada por 5 empurrões no fim
+          da página. */}
+      {canLogIn && (
+        <Collapse open={loginRevealed}>
+          <div className="w-full bg-black text-neutral-500">
+            <div className="mx-auto max-w-6xl px-4 sm:px-8 md:px-12">
+              <div
+                className={[
+                  TEXT_SECTION_INNER,
+                  'py-8 pb-[calc(2rem+env(safe-area-inset-bottom))]',
+                ].join(' ')}
+              >
+                <ArtistDoor active={loginRevealed} />
+              </div>
+            </div>
+          </div>
+        </Collapse>
+      )}
     </footer>
   );
 }
