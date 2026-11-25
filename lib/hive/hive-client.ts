@@ -174,7 +174,7 @@ export async function getUserAccount(username: string) {
   }
 }
 const BLOG_PAGE_SIZE = 20; // máximo que a API aceita por chamada
-const BLOG_MAX_PAGES = 10;
+const BLOG_MAX_PAGES = 25; // até 500 posts: a grade de projetos lê todos
 const BLOG_CACHE_MS = 60_000;
 const blogCache = new Map<string, { at: number; promise: Promise<any[]> }>();
 

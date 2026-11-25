@@ -2,6 +2,7 @@ import { getPostsByAuthor } from '@/lib/hive/hive-client';
 import { isBlockedPermlink } from '@/lib/hive/blocked-posts';
 import { CONTROL_TAGS, isSiteContentPost } from '@/lib/hive/control-tags';
 import { MarkdownRenderer } from '@/lib/markdown/MarkdownRenderer';
+import { byWorkYear } from '@/lib/hive/work-year';
 import { Photo } from '@/photo/components/types';
 import { Discussion } from '@hiveio/dhive';
 
@@ -53,8 +54,12 @@ export async function getHivePosts(username: string) {
 
     // Conteúdo de seção (rodapé, contato…) não é projeto: fica fora da grade
     // para todo mundo, inclusive o artista, que o edita na própria seção.
-    const visiblePosts = posts.filter(post =>
-      !isBlockedPermlink(post.permlink) && !isSiteContentPost(post));
+    // Ordem da grade: pelo ano em que o trabalho foi feito, não pela data do
+    // post (os projetos migrados do Cargo são antigos, mas entram como
+    // posts novos). Os destaques sobem depois, na própria grade.
+    const visiblePosts = posts
+      .filter(post => !isBlockedPermlink(post.permlink) && !isSiteContentPost(post))
+      .sort(byWorkYear);
     
     const formattedPosts = visiblePosts.flatMap(post => {
       // Posts marcados como escondidos ou em destaque continuam vindo daqui,

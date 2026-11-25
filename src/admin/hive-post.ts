@@ -1,5 +1,6 @@
 import type { Operation } from '@hiveio/dhive';
 import { sendHiveOperation } from '../../lib/hive/server-functions';
+import { musicEmbedFor } from '@/utility/music-embed';
 import { diag } from './diagnostics';
 import { HiveAuthTimeoutError, loadHiveAuthSession } from './hiveauth-session';
 import { getKeychain, KeychainTimeoutError, keychainBroadcast, keychainErrorMessage } from './keychain';
@@ -81,9 +82,6 @@ export function transformExternalMedia(markdown: string) {
   const youtubePattern = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/i;
   const vimeoPattern = /(?:vimeo\.com\/|player\.vimeo\.com\/video\/)(\d+)/i;
   const videoFilePattern = /\.(mp4|webm|mov|m4v|ogg)(\?.*)?$/i;
-  const spotifyPattern = /open\.spotify\.com\/(?:intl-[a-z-]+\/)?(track|album|playlist|episode|show|artist)\/([a-zA-Z0-9]+)/i;
-  const soundcloudPattern = /^https?:\/\/(?:www\.|m\.)?soundcloud\.com\/[^\s]+$/i;
-  const appleMusicPattern = /^https?:\/\/music\.apple\.com\/([^\s]+)$/i;
 
   return markdown
     .split('\n')
@@ -104,20 +102,8 @@ export function transformExternalMedia(markdown: string) {
         return `<iframe src="https://player.vimeo.com/video/${vimeoMatch[1]}" allow="autoplay; fullscreen" frameborder="0"></iframe>`;
       }
 
-      const spotifyMatch = trimmed.match(spotifyPattern);
-      if (spotifyMatch) {
-        return `<iframe src="https://open.spotify.com/embed/${spotifyMatch[1]}/${spotifyMatch[2]}" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" frameborder="0"></iframe>`;
-      }
-
-      if (soundcloudPattern.test(trimmed)) {
-        const url = encodeURIComponent(trimmed.split('?')[0]);
-        return `<iframe src="https://w.soundcloud.com/player/?url=${url}&color=%23111111&visual=false" allow="autoplay" loading="lazy" frameborder="0"></iframe>`;
-      }
-
-      const appleMusicMatch = trimmed.match(appleMusicPattern);
-      if (appleMusicMatch) {
-        return `<iframe src="https://embed.music.apple.com/${appleMusicMatch[1]}" allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" loading="lazy" frameborder="0"></iframe>`;
-      }
+      const music = musicEmbedFor(trimmed);
+      if (music) return music;
 
       if (videoFilePattern.test(trimmed)) {
         return `<video src="${trimmed}" controls></video>`;
