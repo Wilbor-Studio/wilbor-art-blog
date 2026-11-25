@@ -26,6 +26,8 @@ export default function ViewSwitcher({
   isLandingPage?: boolean
   drawerTagsProps?: {
     tags: string[];
+    /** Projetos visíveis por tag, mostrado ao lado de cada uma no menu. */
+    tagCounts?: Record<string, number>;
     selectedTags: string[];
     setSelectedTags?: (tags: string[]) => void;
   }
@@ -131,6 +133,7 @@ export default function ViewSwitcher({
 
   const drawerProps = {
     tags: tagsToUse,
+    tagCounts: drawerTagsProps?.tagCounts,
     selectedTags: drawerTagsProps?.selectedTags ?? [],
     setSelectedTags: drawerTagsProps?.setSelectedTags,
     menuItems,

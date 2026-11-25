@@ -45,6 +45,7 @@ export default function ProjectsClient({
         <ViewSwitcher
           drawerTagsProps={{
             tags: tags.map((t: any) => t.tag),
+            tagCounts: Object.fromEntries(tags.map((t: any) => [t.tag, t.count])),
             selectedTags,
             setSelectedTags: handleTagsChange,
           }}

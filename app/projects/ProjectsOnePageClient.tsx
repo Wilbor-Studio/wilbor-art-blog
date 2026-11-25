@@ -242,6 +242,7 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
         isLandingPage={true}
         drawerTagsProps={{
           tags: projectsProps.tags.map((t: any) => t.tag),
+          tagCounts: Object.fromEntries(projectsProps.tags.map((t: any) => [t.tag, t.count])),
           selectedTags,
           setSelectedTags: handleTagsChange,
         }}

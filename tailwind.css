@@ -436,6 +436,14 @@
   50% { box-shadow: 0 0 14px 1px rgb(255 255 255 / 0.14); }
 }
 
+/* Troca de tema (ThemeToggle): esmaecimento da página toda entre o tema
+   antigo e o novo, mais lento que o padrão do navegador (250ms). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 600ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* Botões WhatsApp / E-mail do Contato (efeito "border beam"): um feixe de
    luz na cor do texto dá a volta na borda o tempo todo.
    O ::before cobre exatamente a borda de 1px; a máscara recorta o miolo,
