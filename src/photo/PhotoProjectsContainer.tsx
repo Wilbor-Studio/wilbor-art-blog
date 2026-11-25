@@ -134,8 +134,12 @@ function groupMediaByPermlink(media: Media[]): Map<string, Media[]> {
                 mediaGroups.set(permlink, []);
             }
             const group = mediaGroups.get(permlink);
-            if (group && !processedUrls.has(item.src)) {
-                processedUrls.add(item.src);
+            // Repetição contada por post: dois posts com as mesmas imagens
+            // (projeto publicado duas vezes) mostram as suas. Contada na
+            // conta toda, o segundo ficava sem nenhuma e quebrava a grade.
+            const key = `${permlink} ${item.src}`;
+            if (group && !processedUrls.has(key)) {
+                processedUrls.add(key);
                 group.push(item);
             }
         }
@@ -150,8 +154,9 @@ function groupMediaByPermlink(media: Media[]): Map<string, Media[]> {
                 json_metadata: JSON.stringify({ image: [mainItem.src] })
             });
             extractedMedia.forEach(mediaContent => {
-                if (!processedUrls.has(mediaContent.url)) {
-                    processedUrls.add(mediaContent.url);
+                const key = `${permlink} ${mediaContent.url}`;
+                if (!processedUrls.has(key)) {
+                    processedUrls.add(key);
                     group.push({
                         id: `${permlink}-${mediaContent.url}`,
                         url: mediaContent.url,
@@ -165,6 +170,10 @@ function groupMediaByPermlink(media: Media[]): Map<string, Media[]> {
                 }
             });
         }
+    });
+    // Post sem nenhuma imagem ou vídeo reconhecível não tem o que mostrar.
+    mediaGroups.forEach((group, permlink) => {
+        if (group.length === 0) mediaGroups.delete(permlink);
     });
     return mediaGroups;
 }
