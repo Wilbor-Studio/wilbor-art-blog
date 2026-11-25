@@ -1,5 +1,6 @@
 import ReactMarkdown, { type Components } from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
+import remarkBreaks from 'remark-breaks';
 import remarkGfm from 'remark-gfm';
 import ExpandableCarousel from './ExpandableCarousel';
 import ImageCarousel from './ImageCarousel';
@@ -14,6 +15,24 @@ interface MarkdownProps {
     columns?: boolean;
     inExpandedCard?: boolean;
     hasLittleContent?: boolean;
+    /**
+     * Mostra o texto como foi digitado no editor: Enter quebra a linha
+     * (no Markdown puro, linhas seguidas viram um parágrafo só) e cada linha
+     * em branco a mais vira um espaço a mais entre os parágrafos.
+     */
+    preserveLineBreaks?: boolean;
+}
+
+/**
+ * Linhas em branco seguidas valem por uma no Markdown. Para o espaço extra
+ * que a pessoa deu no editor aparecer, cada linha em branco além da
+ * primeira vira um parágrafo vazio.
+ */
+function keepExtraBlankLines(markdown: string): string {
+    return markdown.replace(/\n[ \t]*\n(?:[ \t]*\n)+/g, (run) => {
+        const extra = run.split('\n').length - 3;
+        return '\n\n' + '&nbsp;\n\n'.repeat(extra);
+    });
 }
 
 
@@ -121,15 +140,21 @@ function getAudioEmbedHeight(src: string): number | null {
         // Faixa e episódio cabem no player compacto; listas pedem espaço.
         return ['track', 'episode'].includes(spotify[1]) ? 152 : 352;
     }
+    if (src.includes('embed.music.apple.com')) {
+        // Música avulsa (?i=) usa o player compacto; álbum e playlist, o grande.
+        return /[?&]i=/.test(src) ? 175 : 450;
+    }
     if (src.includes('w.soundcloud.com/player')) {
         return decodeURIComponent(src).includes('/sets/') ? 450 : 166;
     }
     return null;
 }
 
-export default function Markdown({ children, className = '', removeMedia = false, images, videoPoster, columns = false, inExpandedCard = false, hasLittleContent = false }: MarkdownProps) {
+export default function Markdown({ children, className = '', removeMedia = false, images, videoPoster, columns = false, inExpandedCard = false, hasLittleContent = false, preserveLineBreaks = false }: MarkdownProps) {
     const baseContent = removeMedia ? removeImagesAndVideosFromMarkdown(children) : children;
-    const content = normalizeMarkdownFormatting(baseContent);
+    const normalized = normalizeMarkdownFormatting(baseContent);
+    const content = preserveLineBreaks ? keepExtraBlankLines(normalized) : normalized;
+    const remarkPlugins = preserveLineBreaks ? [remarkGfm, remarkBreaks] : [remarkGfm];
     const hasSingleImage = images && images.length === 1;
 
     // Cores baseadas no tema - mesma cor em ambos os modos
@@ -383,6 +408,7 @@ export default function Markdown({ children, className = '', removeMedia = false
                     <iframe
                         src={props.src}
                         allow={props.allow}
+                        sandbox={props.sandbox}
                         loading="lazy"
                         title={props.title || 'Player de música'}
                         className="my-3 block w-full rounded-xl"
@@ -466,7 +492,7 @@ export default function Markdown({ children, className = '', removeMedia = false
                         <div key={idx} className="flex-1 min-w-[220px] max-w-xs sm:max-w-sm md:max-w-md">
                             <div className="max-w-none text-left leading-relaxed text-base sm:text-lg" style={{ color: textColor,  }}>
                                 <ReactMarkdown
-                                    remarkPlugins={[remarkGfm]}
+                                    remarkPlugins={remarkPlugins}
                                     rehypePlugins={[rehypeRaw]}
                                     components={components}
                                 >
@@ -543,7 +569,7 @@ export default function Markdown({ children, className = '', removeMedia = false
                             : "my-4 first:mt-0 last:mb-0"}
                     >
                         <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
+                            remarkPlugins={remarkPlugins}
                             rehypePlugins={[rehypeRaw]}
                             components={components}
                         >

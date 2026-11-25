@@ -20,7 +20,8 @@ export default function AdminLoginLink({ className = '' }: { className?: string 
         'border-0 bg-transparent shadow-none rounded-none px-0',
         'font-mono text-[10px] uppercase tracking-wider',
         'text-neutral-400 hover:text-neutral-700',
-        'dark:text-neutral-600 dark:hover:text-neutral-300',
+        // Sobre o cinza da faixa final (--tone-footer), o 600 sumia.
+        'dark:text-neutral-500 dark:hover:text-neutral-300',
         'transition-colors',
         className,
       ].filter(Boolean).join(' ')}

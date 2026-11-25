@@ -1,54 +1,43 @@
 "use client";
 import ViewSwitcher from '@/app/ViewSwitcher';
 import PhotoGridPage from '@/photo/PhotoGridPage';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { readTagsFromParams, writeTagsToUrl } from '@/utility/tag-filter';
 import { useCallback, useEffect, useState } from 'react';
 
-export default function ProjectsClient({ 
-  posts, 
-  tags, 
-  photosCount, 
-  cameras, 
-  simulations, 
+export default function ProjectsClient({
+  posts,
+  tags,
+  photosCount,
+  cameras,
+  simulations,
   hideSwitcher = false,
-  externalSelectedTag,
-  onTagChange
+  externalSelectedTags,
+  onTagsChange,
 }: any) {
-  const [internalSelectedTag, setInternalSelectedTag] = useState<string | null>(null);
+  const [internalSelectedTags, setInternalSelectedTags] = useState<string[]>([]);
   const searchParams = useSearchParams();
-  const router = useRouter();
 
-  const selectedTag = externalSelectedTag !== undefined ? externalSelectedTag : internalSelectedTag;
+  // Na página principal as tags vêm de fora (ProjectsOnePageClient); sozinho,
+  // este componente lê e grava a URL por conta própria.
+  const selectedTags: string[] = externalSelectedTags ?? internalSelectedTags;
 
   useEffect(() => {
-    if (externalSelectedTag !== undefined) return;
+    if (externalSelectedTags !== undefined) return;
+    const known = new Set(tags.map((t: any) => t.tag));
+    setInternalSelectedTags(readTagsFromParams(searchParams).filter(tag => known.has(tag)));
+  }, [searchParams, tags, externalSelectedTags]);
 
-    const tagFromUrl = searchParams.get('tag');
-    if (tagFromUrl) {
-      const tagExists = tags.some((t: any) => t.tag === tagFromUrl);
-      if (tagExists) {
-        setInternalSelectedTag(tagFromUrl);
-      }
-    } else {
-      setInternalSelectedTag(null);
+  const handleTagsChange = useCallback((next: string[]) => {
+    if (onTagsChange) {
+      onTagsChange(next);
+      return;
     }
-  }, [searchParams, tags, externalSelectedTag]);
-
-  const handleTagChange = useCallback((tag: string | null) => {
-    if (onTagChange) {
-      onTagChange(tag);
-    } else {
-      const url = new URL(window.location.href);
-      if (tag) {
-        url.searchParams.set('tag', tag);
-      } else {
-        url.searchParams.delete('tag');
-      }
-      window.history.pushState({}, '', url.toString());
-      // Also update internal state directly for immediate feedback
-      setInternalSelectedTag(tag);
-    }
-  }, [onTagChange]);
+    const url = new URL(window.location.href);
+    writeTagsToUrl(url, next);
+    window.history.pushState({}, '', url.toString());
+    setInternalSelectedTags(next);
+  }, [onTagsChange]);
 
   return (
     <>
@@ -56,16 +45,16 @@ export default function ProjectsClient({
         <ViewSwitcher
           drawerTagsProps={{
             tags: tags.map((t: any) => t.tag),
-            selectedTag,
-            setSelectedTag: handleTagChange,
+            selectedTags,
+            setSelectedTags: handleTagsChange,
           }}
         />
       )}
       <PhotoGridPage
         photos={posts}
         photosCount={photosCount}
-        selectedTag={selectedTag}
-        setSelectedTag={handleTagChange}
+        selectedTags={selectedTags}
+        setSelectedTags={handleTagsChange}
       />
     </>
   );

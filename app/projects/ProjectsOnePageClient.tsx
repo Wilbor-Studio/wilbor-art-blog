@@ -3,6 +3,9 @@
 import ViewSwitcher, { SwitcherSelection } from '@/app/ViewSwitcher';
 import About from '@/app/about/page';
 import { PATH_GRID } from '@/app/paths';
+import Collapse from '@/components/Collapse';
+import useFillViewportBands from '@/components/useFillViewportBands';
+import { readTagsFromParams, writeTagsToUrl } from '@/utility/tag-filter';
 import ExhibitionsContent from '@/components/ExhibitionsContent';
 import PartnersContent from '@/components/PartnersContent';
 import SoundContent from '@/components/SoundContent';
@@ -18,7 +21,20 @@ const MemoizedPartnersContent = memo(PartnersContent);
 
 export default function ProjectsOnePageClient({ projectsProps }: { projectsProps: any }) {
   const [activeSection, setActiveSection] = useState<SwitcherSelection>('projects');
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  // Tags marcadas no filtro (várias; ver utility/tag-filter).
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  // A grade começa aberta (é a vitrine do site) e pode ser recolhida pelo
+  // toque na faixa do header. Abre sozinha quando a pessoa escolhe uma tag,
+  // chega por link de projeto ou toca em "PROJETOS" no menu.
+  const [projectsOpen, setProjectsOpen] = useState(true);
+  // Com tudo fechado, as faixas das seções dividem a altura da tela.
+  useFillViewportBands();
+  const toggleProjects = useCallback(() => {
+    setProjectsOpen(open => !open);
+    // Volta ao topo para a pessoa ver o resultado do toque (recolher no
+    // meio da grade faria o conteúdo pular).
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -44,25 +60,18 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
 
   // Sync tag with URL on mount and update
   useEffect(() => {
-    const tagFromUrl = searchParams.get('tag');
-    if (tagFromUrl) {
-      setSelectedTag(tagFromUrl);
-    } else {
-      setSelectedTag(null);
-    }
+    const tagsFromUrl = readTagsFromParams(searchParams);
+    setSelectedTags(tagsFromUrl);
+    if (tagsFromUrl.length > 0 || searchParams.get('project')) setProjectsOpen(true);
   }, [searchParams]);
 
-  const handleTagChange = useCallback((tag: string | null) => {
+  const handleTagsChange = useCallback((tags: string[]) => {
     const url = new URL(window.location.href);
-    if (tag) {
-      url.searchParams.set('tag', tag);
-    } else {
-      url.searchParams.delete('tag');
-    }
-    // Preservar o parâmetro project se existir
-    // (não remover, apenas atualizar a tag)
+    // O parâmetro project, se houver, fica: só as tags mudam.
+    writeTagsToUrl(url, tags);
     window.history.pushState({}, '', url.toString());
-    setSelectedTag(tag);
+    setSelectedTags(tags);
+    if (tags.length > 0) setProjectsOpen(true);
   }, []);
 
   // Handler para navegação por hash (scroll suave até a seção)
@@ -87,8 +96,9 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
         cleanUrl.hash = '';
         window.history.replaceState(null, '', PATH_GRID + cleanUrl.search);
 
-        setSelectedTag(null);
+        setSelectedTags([]);
         setActiveSection('projects');
+        setProjectsOpen(true);
         window.dispatchEvent(new CustomEvent('wilbor:close-expanded-project'));
         router.replace(PATH_GRID + cleanUrl.search);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -97,10 +107,46 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
 
       const targetElement = document.getElementById(targetId);
       if (targetElement) {
-        // Altura do header: 90px desktop, 64px mobile
-        const headerHeight = window.innerWidth >= 768 ? 90 : 64;
-        const yOffset = targetElement.getBoundingClientRect().top + window.pageYOffset - headerHeight;
+        // O menu funciona como sanfona: a seção tocada abre e as outras que
+        // estiverem abertas fecham (a grade de projetos fica de fora; ela é
+        // do header). Fechar uma seção acima faz a tocada subir durante a
+        // animação, então o destino da rolagem já desconta o conteúdo que
+        // vai recolher acima dela.
+        const targetTop = targetElement.getBoundingClientRect().top;
+        let collapsingAbove = 0;
+        document
+          .querySelectorAll<HTMLButtonElement>('section[id] button[data-band-row][aria-expanded="true"]')
+          .forEach(row => {
+            if (targetElement.contains(row)) return;
+            const content = document.getElementById(row.getAttribute('aria-controls') ?? '');
+            const box = content?.getBoundingClientRect();
+            if (box && box.top < targetTop) collapsingAbove += box.height;
+            row.click();
+          });
+
+        // Abre a tocada pela primeira faixa de título dela (a mesma que a
+        // pessoa tocaria), se estiver fechada. Em Exposições, abre
+        // Exposições e deixa Publicações como está.
+        const titleRow = targetElement.querySelector<HTMLButtonElement>('button[data-band-row]');
+        if (titleRow?.getAttribute('aria-expanded') === 'false') titleRow.click();
+
+        // Altura real do header (ele cresce com as faixas da página).
+        const headerHeight = document.querySelector('header')?.getBoundingClientRect().height
+          ?? (window.innerWidth >= 768 ? 90 : 64);
+        const yOffset = targetTop + window.pageYOffset - collapsingAbove - headerHeight;
         window.scrollTo({ top: yOffset, behavior: 'smooth' });
+        // Acabadas a rolagem e a animação, confere: imagens da grade
+        // carregando acima mudam a altura da página no caminho. Se a seção
+        // não parou embaixo do header e ainda dá para rolar, ajusta. (No fim
+        // da página não dá: a seção para onde a rolagem acaba.)
+        window.setTimeout(() => {
+          const drift = targetElement.getBoundingClientRect().top - headerHeight;
+          const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+          const canMove = drift > 0 ? window.scrollY < maxScroll - 1 : window.scrollY > 0;
+          if (Math.abs(drift) > 4 && canMove) {
+            window.scrollTo({ top: window.scrollY + drift, behavior: 'smooth' });
+          }
+        }, 900);
         // Atualiza a URL sem recarregar a página, preservando query params
         const url = new URL(window.location.href);
         const queryString = url.search;
@@ -113,7 +159,7 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
       // Fallback: se não encontrar a seção, recarrega a página
       window.location.href = href;
     }
-  }, [router, setSelectedTag]);
+  }, [router]);
 
   // Atualiza rota /projects#secao conforme o usuário rola (scroll spy baseado na seção mais próxima do centro)
   useEffect(() => {
@@ -196,21 +242,30 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
         isLandingPage={true}
         drawerTagsProps={{
           tags: projectsProps.tags.map((t: any) => t.tag),
-          selectedTag,
-          setSelectedTag: handleTagChange,
+          selectedTags,
+          setSelectedTags: handleTagsChange,
         }}
         onMenuItemClick={handleMenuItemClick}
+        projectsOpen={projectsOpen}
+        onToggleProjects={toggleProjects}
       />
 
       <div className="flex flex-col w-full">
-        {/* PROJETOS (mantido como estava, só grid + filtros) */}
-        <section id="projects" className="min-h-screen w-full bg-white dark:bg-neutral-950 pt-6 md:pt-8">
-          <MemoizedProjectsClient
-            {...projectsProps}
-            hideSwitcher={true}
-            externalSelectedTag={selectedTag}
-            onTagChange={handleTagChange}
-          />
+        {/* PROJETOS: a grade de cards. Recolhe tocando na faixa do header,
+            sem título na página. Fechada, só esconde (não desmonta): projeto
+            aberto e filtro continuam onde estavam ao reabrir. */}
+        <section
+          id="projects"
+          className="w-full bg-white dark:bg-neutral-950"
+        >
+          <Collapse id="projects-grid" open={projectsOpen} keepMounted className="min-h-screen pt-6 md:pt-8">
+            <MemoizedProjectsClient
+              {...projectsProps}
+              hideSwitcher={true}
+              externalSelectedTags={selectedTags}
+              onTagsChange={handleTagsChange}
+            />
+          </Collapse>
         </section>
 
         {/* ABOUT COMO SEÇÃO DA LANDING */}

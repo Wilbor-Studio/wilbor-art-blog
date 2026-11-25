@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useState } from 'react';
+import Collapse from '@/components/Collapse';
 
 /**
  * Bloco recolhível: mostra só o rótulo e expande o conteúdo quando a pessoa
@@ -16,6 +17,11 @@ export default function CollapsibleSection({
   count,
   size = 'default',
   action,
+  defaultOpen = false,
+  open,
+  onOpenChange,
+  keepMounted = false,
+  id,
 }: {
   children: React.ReactNode
   label: string
@@ -30,9 +36,28 @@ export default function CollapsibleSection({
    * que abre e fecha, então tocar nela não mexe no acordeão.
    */
   action?: React.ReactNode
+  /** Começa aberta (ex.: a grade de projetos). */
+  defaultOpen?: boolean
+  /** Estado controlado de fora (ex.: abrir ao escolher um filtro). */
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  /**
+   * Fechada, só esconde o conteúdo em vez de desmontá-lo: preserva o
+   * estado dele (projeto aberto, filtros) e não recarrega ao reabrir.
+   */
+  keepMounted?: boolean
+  /** id do conteúdo, para links e aria-controls estáveis. */
+  id?: string
 }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const contentId = useId();
+  const [internalOpen, setInternalOpen] = useState(defaultOpen);
+  const isOpen = open ?? internalOpen;
+  const setIsOpen = (next: boolean | ((prev: boolean) => boolean)) => {
+    const value = typeof next === 'function' ? next(isOpen) : next;
+    setInternalOpen(value);
+    onOpenChange?.(value);
+  };
+  const generatedId = useId();
+  const contentId = id ?? generatedId;
 
   return (
     <div>
@@ -41,6 +66,8 @@ export default function CollapsibleSection({
         type="button"
         onClick={() => setIsOpen(open => !open)}
         aria-expanded={isOpen}
+        // Faixas de título dividem a sobra da tela (useFillViewportBands).
+        data-band-row={size === 'title' ? '' : undefined}
         aria-controls={contentId}
         className={[
           // O tailwind.css dá borda, fundo, sombra e padding a todo <button>
@@ -49,7 +76,10 @@ export default function CollapsibleSection({
           // atravessando a seção — por isso o cromo é zerado explicitamente.
           'border-0 bg-transparent shadow-none rounded-none px-0',
           'group flex flex-1 min-w-0 items-center gap-3 text-left',
-          'py-4 sm:py-5',
+          // --band-extra: respiro somado quando a página não enche a tela.
+          size === 'title'
+            ? 'py-[calc(1rem+var(--band-extra,0px))] sm:py-[calc(1.25rem+var(--band-extra,0px))]'
+            : 'py-4 sm:py-5',
           // Cor forte fixa, sem mudar no hover: a maior parte do público
           // entra pelo iPhone e pelo iPad, onde hover não existe, e o
           // rótulo ficava sempre no cinza apagado.
@@ -91,7 +121,7 @@ export default function CollapsibleSection({
 
         <svg
           className={[
-            'ml-auto h-5 w-5 shrink-0 transition-transform duration-200',
+            'ml-auto h-5 w-5 shrink-0 transition-transform duration-500 ease-in-out',
             // Fechado aponta para o rótulo (esquerda); aberto, para o conteúdo.
             isOpen ? '' : 'rotate-90',
           ].join(' ')}
@@ -108,14 +138,14 @@ export default function CollapsibleSection({
           />
         </svg>
       </button>
-      {action && <div className="shrink-0">{action}</div>}
+      {/* empty:hidden: o "editar" só aparece para o artista logado; sem
+          ele, o wrapper vazio ainda somava o gap e afastava a seta da borda. */}
+      {action && <div className="shrink-0 empty:hidden">{action}</div>}
       </div>
 
-      {isOpen && (
-        <div id={contentId} className="pb-5 animate-fade-in">
-          {children}
-        </div>
-      )}
+      <Collapse id={contentId} open={isOpen} keepMounted={keepMounted} className="pb-5">
+        {children}
+      </Collapse>
     </div>
   );
 }

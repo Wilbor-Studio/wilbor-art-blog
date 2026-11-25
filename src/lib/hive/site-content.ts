@@ -39,10 +39,24 @@ export interface SectionTitles {
   sound: string;
 }
 
+/**
+ * Imagem de abertura de cada seção (endereço da imagem, 1920×1080). Vazio:
+ * a seção ainda não tem imagem; o artista logado vê um placeholder no lugar.
+ */
+export interface SectionImages {
+  exhibitions: string;
+  publications: string;
+  sound: string;
+  partners: string;
+}
+
+export type SectionImageSlot = keyof SectionImages;
+
 export interface SiteConfig {
   banner: BannerConfig;
   seo: SeoConfig;
   sectionTitles: SectionTitles;
+  sectionImages: SectionImages;
 }
 
 /** Valores usados enquanto o artista não personalizar nada. */
@@ -62,6 +76,12 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
     about: 'Sobre Wilbor',
     partners: 'Parceiros',
     sound: 'Bota o som',
+  },
+  sectionImages: {
+    exhibitions: '',
+    publications: '',
+    sound: '',
+    partners: '',
   },
 };
 
@@ -86,6 +106,10 @@ export function parseSiteConfig(body?: string | null): SiteConfig {
       sectionTitles: {
         ...DEFAULT_SITE_CONFIG.sectionTitles,
         ...parsed.sectionTitles,
+      },
+      sectionImages: {
+        ...DEFAULT_SITE_CONFIG.sectionImages,
+        ...parsed.sectionImages,
       },
     };
   } catch {
@@ -137,6 +161,60 @@ export async function fetchPostBody(permlink: string): Promise<string | null> {
     const data = await response.json();
     const body = data?.result?.body;
     return typeof body === 'string' && body.trim() ? body : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Título, resumo e imagem de um projeto, para a prévia do link
+ * compartilhado (WhatsApp, e-mail, redes). Null se o post não existir ou o
+ * Hive não responder a tempo: aí a página usa a prévia padrão do site.
+ */
+export async function fetchPostPreview(permlink: string): Promise<{
+  title: string
+  description: string
+  image?: string
+} | null> {
+  if (!SITE_AUTHOR || !permlink) return null;
+
+  try {
+    const response = await fetch('https://api.hive.blog', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'condenser_api.get_content',
+        params: [SITE_AUTHOR, permlink],
+        id: 1,
+      }),
+      signal: AbortSignal.timeout(5000),
+      next: { revalidate: 300 },
+    });
+    if (!response.ok) return null;
+
+    const post = (await response.json())?.result;
+    if (!post?.title) return null;
+
+    let metadata: { thumbnail?: string, image?: string[] } = {};
+    try { metadata = JSON.parse(post.json_metadata || '{}'); } catch { /* sem metadados */ }
+
+    // Texto corrido do corpo, sem markdown nem HTML, para o resumo.
+    const description = String(post.body || '')
+      .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+      .replace(/https?:\/\/\S+/g, ' ')
+      .replace(/[#*_>`~|-]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 180);
+
+    return {
+      title: post.title,
+      description,
+      image: metadata.thumbnail || metadata.image?.[0],
+    };
   } catch {
     return null;
   }

@@ -4,7 +4,9 @@ import { useHiveAuth } from '@/admin/HiveAuthProvider';
 import ProjectAdminMenu from '@/admin/ProjectAdminMenu';
 import { IconX } from '@/components/IconX';
 import Markdown from '@/components/Markdown';
+import ShareProjectButton from '@/components/ShareProjectButton';
 import ShareTagButton from '@/components/ShareTagButton';
+import { matchesTags, toggleTag } from '@/utility/tag-filter';
 import { MarkdownRenderer } from '@/lib/markdown/MarkdownRenderer';
 import '@/styles/slider-custom.css';
 import { clsx } from 'clsx/lite';
@@ -83,6 +85,13 @@ function enhanceMediaWithMetadata(media: Media[]): Media[] {
     });
 }
 
+/** Altura real do header fixo (cresce com as faixas da página). */
+function headerOffset() {
+    const header = document.querySelector('header');
+    if (header) return header.getBoundingClientRect().height;
+    return window.innerWidth >= 768 ? 90 : 64;
+}
+
 function groupMediaByPermlink(media: Media[]): Map<string, Media[]> {
     const enhancedMedia = enhanceMediaWithMetadata(media);
     const mediaGroups = new Map<string, Media[]>();
@@ -139,7 +148,6 @@ const MediaItem = ({
     onTagClick,
     hasLargeContent = false,
     isReversedLayout = false,
-    shareUrl
 }: {
     items: Media[];
     isExpanded: boolean;
@@ -148,28 +156,26 @@ const MediaItem = ({
     onTagClick: (tag: string) => void;
     hasLargeContent?: boolean;
     isReversedLayout?: boolean;
-    shareUrl?: string;
 }) => {
     const mainItem = items[0];
     const [isHovered, setIsHovered] = useState(false);
     const contentRef = useRef<HTMLDivElement>(null);
     const [imageError, setImageError] = useState(false);
     const [showAllTags, setShowAllTags] = useState(false);
-    const [linkCopied, setLinkCopied] = useState(false);
     const images = getPostImages(mainItem);
 
-    const handleCopyLink = useCallback(async (e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (shareUrl) {
-            try {
-                await navigator.clipboard.writeText(shareUrl);
-                setLinkCopied(true);
-                setTimeout(() => setLinkCopied(false), 2000);
-            } catch (err) {
-                console.error('Erro ao copiar link:', err);
-            }
-        }
-    }, [shareUrl]);
+    // Compartilhar o projeto, no rodapé do card: o link abre o site com ele
+    // aberto e as tags dele marcadas no filtro.
+    const shareButton = (size: 'sm' | 'lg' = 'sm', className?: string) =>
+        mainItem.hiveMetadata?.permlink ? (
+            <ShareProjectButton
+                permlink={mainItem.hiveMetadata.permlink}
+                tags={mainItem.tags}
+                title={mainItem.title}
+                size={size}
+                className={className}
+            />
+        ) : null;
 
     // Bloqueia scroll automático quando vídeo é clicado
     useEffect(() => {
@@ -341,8 +347,9 @@ const MediaItem = ({
                         />
                     </div>
                     {!isMainVideo && media.title && (
-                        <div className="bg-black flex flex-col justify-center px-4 py-3">
-                            <p className="text-white text-base font-medium">{media.title}</p>
+                        <div className="bg-black flex items-start gap-2 px-4 py-3">
+                            <p className="flex-1 min-w-0 text-white text-base font-medium">{media.title}</p>
+                            {shareButton('sm', 'text-white')}
                         </div>
                     )}
                 </div>
@@ -375,8 +382,11 @@ const MediaItem = ({
                         )}
 
                     >
-                        <div className="text-sm font-normal line-clamp-2 text-center !text-gray-500 dark:!text-[#888888] mt-0 mb-1 transition-colors duration-100">
-                            {media.title}
+                        <div className="flex w-full items-start gap-2 mt-0 mb-1">
+                            <div className="flex-1 min-w-0 text-sm font-normal line-clamp-2 text-left !text-gray-500 dark:!text-[#888888] transition-colors duration-100">
+                                {media.title}
+                            </div>
+                            {shareButton('sm', '!text-gray-500 dark:!text-[#888888]')}
                         </div>
                         {media.tags && media.tags.length > 0 && (
                             <div className="mt-1 flex flex-wrap justify-start gap-x-2 gap-y-0.5">
@@ -460,8 +470,11 @@ const MediaItem = ({
                                             )
                                         }
                                     >
-                                        <div className="text-xs font-medium line-clamp-2 text-left !text-gray-500 dark:!text-[#888888] mt-0 mb-0.5 transition-colors duration-100">
-                                            {mainItem.title}
+                                        <div className="flex w-full items-start gap-1.5 mt-0 mb-0.5">
+                                            <div className="flex-1 min-w-0 text-xs font-medium line-clamp-2 text-left !text-gray-500 dark:!text-[#888888] transition-colors duration-100">
+                                                {mainItem.title}
+                                            </div>
+                                            {shareButton('sm', '!text-gray-500 dark:!text-[#888888]')}
                                         </div>
                                         {mainItem.tags && mainItem.tags.length > 0 && (
                                             <div className="mt-0 flex flex-wrap justify-start gap-x-1 gap-y-0.5">
@@ -511,8 +524,11 @@ const MediaItem = ({
                                                             'group-hover:bg-black group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-black'
                                                         )
                                                     }>
-                                                        <div className="text-xs sm:text-sm md:text-base font-medium line-clamp-1 transition-colors duration-100 !text-gray-500 dark:!text-[#888888]">
-                                                            {mainItem.title}
+                                                        <div className="flex w-full items-center gap-2">
+                                                            <div className="flex-1 min-w-0 text-xs sm:text-sm md:text-base font-medium line-clamp-1 transition-colors duration-100 !text-gray-500 dark:!text-[#888888]">
+                                                                {mainItem.title}
+                                                            </div>
+                                                            {shareButton('sm', '!text-gray-500 dark:!text-[#888888]')}
                                                         </div>
                                                         {mainItem.tags && mainItem.tags.length > 0 && (
                                                             <div className={clsx(
@@ -606,34 +622,8 @@ const MediaItem = ({
                                         isFeatured={mainItem.isFeatured}
                                     />
                                 )}
-                                {/* Botão de compartilhar/copiar link */}
-                                {/* {shareUrl && (
-                                    <button
-                                        onClick={handleCopyLink}
-                                        className="p-1.5 sm:p-2 rounded-full transition-colors flex items-center justify-center focus:outline-none hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                        aria-label={linkCopied ? "Link copiado!" : "Copiar link do projeto"}
-                                        title={linkCopied ? "Link copiado!" : "Copiar link do projeto"}
-                                    >
-                                        {linkCopied ? (
-                                            <span className="text-xs sm:text-sm text-green-600 dark:text-green-400">✓ Copiado</span>
-                                        ) : (
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                strokeWidth={1.5}
-                                                stroke="currentColor"
-                                                className="w-5 h-5 sm:w-6 sm:h-6"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"
-                                                />
-                                            </svg>
-                                        )}
-                                    </button>
-                                )} */}
+                                {/* Compartilhar o projeto (abre com as tags dele no filtro) */}
+                                {shareButton('lg', '!text-gray-500 dark:!text-[#888888]')}
                                 <button
                                     onClick={e => { e.stopPropagation(); onExpand(); }}
                                     className="p-1.5 sm:p-2 bg-transparent border-none shadow-none rounded-full transition-colors flex items-center justify-center focus:outline-none hover:bg-transparent"
@@ -675,12 +665,12 @@ export default function PhotoGridContainer({
     sidebar,
     media = [],
     header,
-    selectedTag,
-    setSelectedTag,
+    selectedTags,
+    setSelectedTags,
     ...props
 }: PhotoGridContainerProps & {
-    selectedTag: string | null;
-    setSelectedTag: (tag: string | null) => void;
+    selectedTags: string[];
+    setSelectedTags: (tags: string[]) => void;
 }) {
     const { isAdmin } = useHiveAuth();
     const [expandedPermlinks, setExpandedPermlinks] = useState<string[]>([]);
@@ -692,8 +682,8 @@ export default function PhotoGridContainer({
             // Projetos escondidos continuam visíveis para o artista logado —
             // senão ele não teria como reexibi-los depois de esconder.
             if (group[0].isHidden && !isAdmin) return false;
-            if (!selectedTag) return true;
-            return group[0].tags?.includes(selectedTag);
+            // Qualquer uma das tags marcadas basta.
+            return matchesTags(group[0].tags, selectedTags);
         })
         // Destaques primeiro, mantendo a ordem original entre os iguais.
         .sort(([, a], [, b]) =>
@@ -724,9 +714,8 @@ export default function PhotoGridContainer({
                 setTimeout(() => {
                     const ref = cardRefs.current[projectParam];
                     if (ref) {
-                        // Offset considerando altura do header (90px desktop, 64px mobile) + espaço extra
-                        const headerHeight = window.innerWidth >= 768 ? 90 : 64;
-                        const yOffset = -(headerHeight + 20); // Header + 20px de espaço extra
+                        // Header (altura real: ele cresce com as faixas) + 20px de folga
+                        const yOffset = -(headerOffset() + 20);
                         const y = ref.getBoundingClientRect().top + window.pageYOffset + yOffset;
                         window.scrollTo({ top: y, behavior: 'smooth' });
                     }
@@ -734,26 +723,17 @@ export default function PhotoGridContainer({
             }
         }
     }, [mediaGroups.length]); // Executa apenas quando os mediaGroups forem carregados
+    // Tag tocada num card: filtra só por ela (se já era o único filtro,
+    // desmarca). Para somar tags, o menu.
     const handleTagClick = useCallback((tag: string) => {
-        // Se clicar na mesma tag, desmarca. Caso contrário, seleciona a nova tag
-        const newSelectedTag = selectedTag === tag ? null : tag;
-
-        // Atualiza a URL
+        const onlyThis = selectedTags.length === 1 && selectedTags[0] === tag;
+        // Tira o projeto aberto da URL antes: quem grava as tags parte dela.
         const url = new URL(window.location.href);
-        if (newSelectedTag) {
-            url.searchParams.set('tag', newSelectedTag);
-        } else {
-            url.searchParams.delete('tag');
-        }
-        // Remove o parâmetro project quando filtrar por tag
         url.searchParams.delete('project');
-        window.history.pushState({}, '', url);
-
-        setSelectedTag(newSelectedTag);
-
-        // Fecha todos os cards expandidos
+        window.history.replaceState({}, '', url);
+        setSelectedTags(onlyThis ? [] : [tag]);
         setExpandedPermlinks([]);
-    }, [selectedTag, setSelectedTag]);
+    }, [selectedTags, setSelectedTags]);
 
     // Permite que o header (logo) feche o card expandido
     useEffect(() => {
@@ -783,16 +763,6 @@ export default function PhotoGridContainer({
         window.history.pushState({}, '', url.toString());
     }, []);
 
-    // Função para gerar URL compartilhável do projeto
-    const getProjectShareUrl = useCallback((permlink: string) => {
-        if (typeof window === 'undefined') return '';
-        const url = new URL(window.location.origin + window.location.pathname);
-        if (selectedTag) {
-            url.searchParams.set('tag', selectedTag);
-        }
-        url.searchParams.set('project', permlink);
-        return url.toString();
-    }, [selectedTag]);
     const handleContentSizeChange = (permlink: string, isLarge: boolean) => {
         setHasLargeContentMap(prev => ({ ...prev, [permlink]: isLarge }));
     };
@@ -804,9 +774,8 @@ export default function PhotoGridContainer({
             const ref = cardRefs.current[permlink];
             if (ref) {
                 setTimeout(() => {
-                    // Offset considerando altura do header (90px desktop, 64px mobile) + espaço extra
-                    const headerHeight = window.innerWidth >= 768 ? 90 : 64;
-                    const yOffset = -(headerHeight + 20); // Header + 20px de espaço extra
+                    // Header (altura real: ele cresce com as faixas) + 20px de folga
+                    const yOffset = -(headerOffset() + 20);
                     const y = ref.getBoundingClientRect().top + window.pageYOffset + yOffset;
                     window.scrollTo({ top: y, behavior: 'smooth' });
                 }, 150);
@@ -822,28 +791,39 @@ export default function PhotoGridContainer({
             )}>
                 {header}
 
-                {/* Barra de filtro ativo por tag */}
-                {selectedTag && (
+                {/* Barra do filtro ativo: uma etiqueta por tag marcada */}
+                {selectedTags.length > 0 && (
                     <div className="flex items-center gap-3 flex-wrap mb-6">
                         <span className="font-mono text-xs uppercase tracking-wide text-gray-500 dark:text-zinc-500">
                             Filtrando por
                         </span>
-                        <button
-                            onClick={() => handleTagClick(selectedTag)}
-                            className="inline-flex items-center gap-2 min-h-[40px] px-4 rounded-full font-mono text-sm bg-neutral-900 text-white dark:bg-white dark:text-black border border-neutral-900 dark:border-white hover:opacity-90 active:scale-[0.98] transition-all duration-150 touch-manipulation"
-                            aria-label={`Remover filtro ${selectedTag}`}
-                            title={`Remover filtro ${selectedTag}`}
-                        >
-                            #{selectedTag}
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
+                        {selectedTags.map(tag => (
+                            <button
+                                key={tag}
+                                onClick={() => setSelectedTags(toggleTag(selectedTags, tag))}
+                                className="inline-flex items-center gap-2 min-h-[40px] px-4 rounded-full font-mono text-sm bg-neutral-900 text-white dark:bg-white dark:text-black border border-neutral-900 dark:border-white hover:opacity-90 active:scale-[0.98] transition-all duration-150 touch-manipulation"
+                                aria-label={`Remover filtro ${tag}`}
+                                title={`Remover filtro ${tag}`}
+                            >
+                                #{tag}
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        ))}
+                        {selectedTags.length > 1 && (
+                            <button
+                                onClick={() => setSelectedTags([])}
+                                className="font-mono text-xs text-gray-500 dark:text-zinc-500 bg-transparent border-0 shadow-none p-0 hover:underline"
+                            >
+                                limpar
+                            </button>
+                        )}
                         <span className="font-mono text-xs text-gray-500 dark:text-zinc-500">
                             {mediaGroups.length === 1 ? '1 projeto' : `${mediaGroups.length} projetos`}
                         </span>
                         {/* Compartilhar/copiar link do portfólio filtrado com um cliente */}
-                        <ShareTagButton tag={selectedTag} compact className="sm:ml-auto" />
+                        <ShareTagButton tags={selectedTags} compact className="sm:ml-auto" />
                     </div>
                 )}
 
@@ -898,7 +878,6 @@ export default function PhotoGridContainer({
                                     onTagClick={handleTagClick}
                                     hasLargeContent={!!hasLargeContentMap[permlink]}
                                     isReversedLayout={isOdd}
-                                    shareUrl={isExpanded ? getProjectShareUrl(permlink) : undefined}
                                 />
                             </div>
                         );

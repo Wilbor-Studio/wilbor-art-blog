@@ -102,8 +102,12 @@ export default function RootLayout({
       <body className="bg-main">
           <ThemeProvider attribute="class" defaultTheme={DEFAULT_THEME}>
             <HiveAuthProvider>
+              {/* A página ocupa pelo menos a altura da tela (dvh: no iPhone e
+                  no iPad acompanha a barra do Safari). Com tudo fechado, a
+                  seção Contato estica até o fim, sem sobrar faixa vazia. */}
+              <div className="flex min-h-dvh flex-col">
               <ConstructionBanner />
-              <main >
+              <main className="flex flex-1 flex-col">
                 <div className="flex flex-col items-center">
                 </div>
                 {/* <Nav siteDomainOrTitle="" /> */}
@@ -112,6 +116,7 @@ export default function RootLayout({
                 </div>
                 <Footer />
               </main>
+              </div>
               {/* <CommandK /> */}
               <AdminBar />
             </HiveAuthProvider>

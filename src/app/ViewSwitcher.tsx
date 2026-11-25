@@ -17,6 +17,8 @@ export default function ViewSwitcher({
   tags,
   isLandingPage = false,
   onMenuItemClick,
+  projectsOpen,
+  onToggleProjects,
 }: {
   currentSelection?: SwitcherSelection
   tags?: any
@@ -24,46 +26,42 @@ export default function ViewSwitcher({
   isLandingPage?: boolean
   drawerTagsProps?: {
     tags: string[];
-    selectedTag: string | null;
-    setSelectedTag?: (tag: string | null) => void;
+    selectedTags: string[];
+    setSelectedTags?: (tags: string[]) => void;
   }
   onMenuItemClick?: (href: string) => void;
+  /** Grade de projetos aberta? Com onToggleProjects, a faixa do header abre e fecha a grade. */
+  projectsOpen?: boolean;
+  onToggleProjects?: () => void;
 }) {
   const [fetchedTags, setFetchedTags] = useState<string[]>([]);
   const { theme, systemTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  // Deslocamento do botão fixo do menu para ele ficar dentro da faixa do
-  // header, que o banner de construção empurra para baixo. Vai a zero assim
-  // que o banner sai de cena no scroll, devolvendo o botão ao topo.
-  const [menuTopOffset, setMenuTopOffset] = useState(0);
+  // O header acompanha a página: some ao rolar para baixo (para não cobrir
+  // o que se lê) e volta ao rolar para cima ou perto do topo.
+  const [headerHidden, setHeaderHidden] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
-    const banner = document.getElementById('construction-banner');
-    if (!banner) return;
-
+    let lastY = window.scrollY;
     let ticking = false;
-
-    const measure = () => {
+    const update = () => {
       ticking = false;
-      setMenuTopOffset(Math.max(0, banner.getBoundingClientRect().bottom));
+      const y = window.scrollY;
+      const delta = y - lastY;
+      if (y < 120) setHeaderHidden(false);
+      else if (delta > 8) setHeaderHidden(true);
+      else if (delta < -8) setHeaderHidden(false);
+      if (Math.abs(delta) > 8) lastY = y;
     };
-
-    const schedule = () => {
+    const onScroll = () => {
       if (ticking) return;
       ticking = true;
-      window.requestAnimationFrame(measure);
+      window.requestAnimationFrame(update);
     };
-
-    measure();
-    window.addEventListener('scroll', schedule, { passive: true });
-    window.addEventListener('resize', schedule);
-
-    return () => {
-      window.removeEventListener('scroll', schedule);
-      window.removeEventListener('resize', schedule);
-    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   // If the page didn't provide tags, fetch them from the API so other routes also
@@ -131,68 +129,60 @@ export default function ViewSwitcher({
   // Header: preto no dark, uma faixa cinza-clara no light, com o restante da página permanecendo branco
   const headerBgColor = isDarkMode ? '#000000' : '#e5e5e5'; // gray-200 aproximado do fundo cinza do header
 
+  const drawerProps = {
+    tags: tagsToUse,
+    selectedTags: drawerTagsProps?.selectedTags ?? [],
+    setSelectedTags: drawerTagsProps?.setSelectedTags,
+    menuItems,
+    onMenuItemClick,
+  };
+
   return (
-    <>
-      {/* Mobile: logo à esquerda e Drawer à direita */}
-      <div className="md:hidden w-full flex items-center justify-between pr-4" style={{ height: '64px', backgroundColor: headerBgColor }}>
-        {/* Logo/thumbnail centralizado e contido no topo */}
-        <div className="h-full overflow-hidden flex-1 flex items-center">
-          <BannerWilborSwitcher forceWhiteLogo />
+    // Um header só, fixo no topo: logo à esquerda e controles dentro da
+    // faixa, à direita. Antes o menu era uma caixa branca solta, fixa sobre
+    // o conteúdo. Escondido, sobe com transform; visível fica sem transform,
+    // porque a gaveta do menu usa position: fixed aqui dentro e um transform
+    // a prenderia ao header.
+    <header
+      className="sticky top-0 z-40 w-full transition-transform duration-300 ease-out motion-reduce:transition-none"
+      style={{
+        backgroundColor: headerBgColor,
+        transform: headerHidden ? 'translateY(-100%)' : undefined,
+      }}
+    >
+      {/* --band-header-h: com tudo fechado, o header fica da altura das
+          faixas das seções (useFillViewportBands). */}
+      <div
+        data-band-header=""
+        className="relative h-[var(--band-header-h,4rem)] w-full md:h-[var(--band-header-h,90px)]"
+      >
+        {/* A faixa toda (fora o menu) abre e fecha a grade de projetos, como
+            o título das outras seções. Fora da página de projetos, a logo
+            continua levando para lá. */}
+        <div className="h-full w-full overflow-hidden">
+          <BannerWilborSwitcher
+            forceWhiteLogo
+            onClick={onToggleProjects}
+            expanded={onToggleProjects ? Boolean(projectsOpen) : undefined}
+          />
         </div>
-        <div className="flex items-center flex-shrink-0 mr-0 w-[64px] h-[44px]" aria-hidden="true" />
-      </div>
-      {/* Desktop: Header com faixa preta e menu separado */}
-      <div className="hidden md:flex w-full items-center justify-between relative" style={{ height: '90px' }}>
-        {/* Faixa preta que ocupa 100% mas fica por trás do menu */}
-        <div className="absolute inset-0 z-10" style={{ backgroundColor: headerBgColor, right: '90px' }}>
-          <div className="h-full w-full flex items-center relative">
-            <BannerWilborSwitcher forceWhiteLogo />
+
+        {/* O menu fica na mesma coluna do conteúdo das seções (mesmo padding
+            e largura máxima de textSection), com o centro do ícone alinhado
+            ao centro das setas de abrir/fechar. */}
+        <div className="pointer-events-none absolute inset-0 z-10 px-4 sm:px-8 md:px-12">
+          <div className="mx-auto flex h-full w-full max-w-4xl items-center justify-end">
+            {/* Botão de 64px com -mr-4 próprio: centro 16px antes da borda. */}
+            <div className="pointer-events-auto -mr-1.5 flex h-11 items-center md:hidden">
+              <DrawerTagsMobile {...drawerProps} />
+            </div>
+            {/* Botão de 44px: centro 22px antes da borda. */}
+            <div className="pointer-events-auto -mr-3 hidden h-11 w-11 md:block">
+              <DrawerTagsDesktop {...drawerProps} />
+            </div>
           </div>
         </div>
-
-        {/* Espaçador para empurrar o menu para a direita */}
-        <div className="flex-grow" />
-
-        {/* Menu quadrado na extrema direita, sobrepondo ou ao lado da faixa */}
-        <div className="flex items-center justify-center flex-shrink-0 z-20 bg-white dark:bg-[#222222] relative" style={{ width: '90px', height: '90px' }}>
-          <span className="sr-only">Espaço reservado para o botão do drawer</span>
-        </div>
       </div>
-      <div
-        className="fixed right-0 z-50 hidden md:flex pointer-events-none"
-        style={{ top: menuTopOffset, width: '90px', height: '90px' }}
-        aria-label="Atalho para o menu de tags"
-      >
-        <div
-          className="pointer-events-auto flex items-center justify-center w-full h-full bg-white dark:bg-[#222222] border border-gray-200 dark:border-neutral-800 rounded-l-xl"
-        >
-          <DrawerTagsDesktop
-            tags={tagsToUse}
-            selectedTag={drawerTagsProps?.selectedTag ?? null}
-            setSelectedTag={drawerTagsProps?.setSelectedTag}
-            menuItems={menuItems}
-            onMenuItemClick={onMenuItemClick}
-          />
-        </div>
-      </div>
-      <div
-        className="fixed right-0 z-50 md:hidden pointer-events-none"
-        style={{ top: menuTopOffset, width: '64px', height: '64px' }}
-        aria-label="Atalho móvel para o menu de tags"
-      >
-        <div
-          className="pointer-events-auto flex items-center justify-center w-full h-full"
-          style={{ background: 'transparent' }}
-        >
-          <DrawerTagsMobile
-            tags={tagsToUse}
-            selectedTag={drawerTagsProps?.selectedTag ?? null}
-            setSelectedTag={drawerTagsProps?.setSelectedTag}
-            menuItems={menuItems}
-            onMenuItemClick={onMenuItemClick}
-          />
-        </div>
-      </div>
-    </>
+    </header>
   );
 }

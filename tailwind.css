@@ -310,26 +310,38 @@
       hover:text-medium
   }
   html, body {
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
+    /* clip, e não hidden: corta a sobra lateral do mesmo jeito, mas sem
+       transformar o body num contêiner de rolagem — com hidden + auto o
+       position: sticky do header deixava de funcionar. A rolagem é a da
+       janela. */
+    overflow-x: clip !important;
     width: 100%;
     max-width: 100vw;
-    /* Scrollbar personalizada */
-    scrollbar-width: auto;
   }
+  /* Barra de rolagem: 12px de trilho e 8px de barra visível (a borda
+     transparente afina a barra sem diminuir a área de pegar). Antes eram
+     22px. Nada de scrollbar-width/scrollbar-color fora do Firefox: no
+     Chrome eles desligam estas regras ::-webkit-scrollbar. */
   html::-webkit-scrollbar, body::-webkit-scrollbar {
-    width: 22px;
+    width: 12px;
     background: #222;
   }
   html::-webkit-scrollbar-thumb, body::-webkit-scrollbar-thumb {
     background: #888;
-    border-radius: 11px;
+    background-clip: padding-box;
+    border: 2px solid transparent;
+    border-radius: 6px;
   }
   html::-webkit-scrollbar-thumb:hover, body::-webkit-scrollbar-thumb:hover {
     background: #555;
+    background-clip: padding-box;
   }
-  html, body {
-    scrollbar-width: thick;
+  /* Firefox não lê ::-webkit-scrollbar; lá, a versão fina do sistema. */
+  @supports (-moz-appearance: none) {
+    html {
+      scrollbar-width: thin;
+      scrollbar-color: #888 #222;
+    }
   }
   * {
     box-sizing: border-box;
@@ -399,5 +411,73 @@
   .markdown-content-custom a:hover {
     text-decoration: underline !important;
     color: #888888 !important;
+  }
+}
+
+/*
+ * Porta do artista (ArtistDoor), o easter egg do rodapé: cursor de
+ * terminal piscando e o botão de entrar com um brilho que respira.
+ */
+.artist-door-cursor {
+  animation: artist-door-blink 1s steps(1) infinite;
+}
+
+.artist-door-button {
+  animation: artist-door-glow 2.8s ease-in-out infinite;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+@keyframes artist-door-blink {
+  50% { opacity: 0; }
+}
+
+@keyframes artist-door-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(255 255 255 / 0); }
+  50% { box-shadow: 0 0 14px 1px rgb(255 255 255 / 0.14); }
+}
+
+/* Botões WhatsApp / E-mail do Contato (efeito "border beam"): um feixe de
+   luz na cor do texto dá a volta na borda o tempo todo.
+   O ::before cobre exatamente a borda de 1px; a máscara recorta o miolo,
+   e o gradiente cônico gira com o ângulo animado via @property. */
+@property --contact-beam-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.contact-button {
+  position: relative;
+  isolation: isolate;
+}
+
+.contact-button::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  padding: 1px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--contact-beam-angle),
+    transparent 0deg 270deg,
+    currentColor 330deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: contact-beam-spin 3.2s linear infinite;
+}
+
+@keyframes contact-beam-spin {
+  to { --contact-beam-angle: 360deg; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .artist-door-cursor,
+  .artist-door-button,
+  .contact-button::before {
+    animation: none;
   }
 }

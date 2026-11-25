@@ -4,13 +4,36 @@ import { Photo } from '@/photo/components/types';
 import ProjectsOnePageClient from './ProjectsOnePageClient';
 import { Metadata } from 'next/types';
 import { createMetadata } from '@/utility/metadata';
+import { fetchPostPreview } from '@/lib/hive/site-content';
 
 export const dynamic = 'force-dynamic';
 
-export async function generateMetadata(): Promise<Metadata> {
+const DEFAULT_DESCRIPTION = 'Explore as exposições e exibições de Wilson Domingues "Wilbor", artista multifacetado que une skate, arte e audiovisual.';
+
+/**
+ * Link de um projeto (/projects?project=…, o que o botão de compartilhar
+ * gera): a prévia mostra o título e a imagem do projeto. Sem projeto, a
+ * prévia padrão da página.
+ */
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}): Promise<Metadata> {
+  const { project } = await searchParams;
+  const permlink = typeof project === 'string' ? project : undefined;
+  const preview = permlink ? await fetchPostPreview(permlink) : null;
+  if (preview) {
+    return createMetadata({
+      title: preview.title,
+      description: preview.description || DEFAULT_DESCRIPTION,
+      ...preview.image && { imageUrl: preview.image },
+      path: `/projects?project=${encodeURIComponent(permlink!)}`,
+    });
+  }
   return createMetadata({
     title: 'Projetos',
-    description: 'Explore as exposições e exibições de Wilson Domingues "Wilbor", artista multifacetado que une skate, arte e audiovisual.',
+    description: DEFAULT_DESCRIPTION,
     path: '/projects'
   });
 }
