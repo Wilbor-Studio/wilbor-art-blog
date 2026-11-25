@@ -1,15 +1,15 @@
 "use client";
 import IconMenu from '@/app/IconMenu';
 import { IconX } from '@/components/IconX';
-import ShareTagButton from '@/components/ShareTagButton';
 import { buildTagsUrl, toggleTag } from '@/utility/tag-filter';
 import { clsx } from 'clsx/lite';
 import { useEffect, useState } from 'react';
-import { useTheme } from 'next-themes';
-import { BiDesktop, BiMoon, BiSun } from 'react-icons/bi';
+import TagFilterList from './TagFilterList';
+import ThemeToggle from './ThemeToggle';
 
-export default function DrawerTagsDesktop({ tags, selectedTags = [], setSelectedTags, menuItems, onMenuItemClick }: {
+export default function DrawerTagsDesktop({ tags, tagCounts, selectedTags = [], setSelectedTags, menuItems, onMenuItemClick }: {
   tags: string[];
+  tagCounts?: Record<string, number>;
   selectedTags?: string[];
   /** Sem ele (outras rotas), tocar numa tag leva para /projects filtrado. */
   setSelectedTags?: (tags: string[]) => void;
@@ -20,7 +20,6 @@ export default function DrawerTagsDesktop({ tags, selectedTags = [], setSelected
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [drawerActive, setDrawerActive] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
-  const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -146,7 +145,7 @@ export default function DrawerTagsDesktop({ tags, selectedTags = [], setSelected
                       setShowDrawer(false);
                     }}
                     className={clsx(
-                      'w-full text-left px-4 py-3 text-lg transition font-mono border-0 rounded-lg',
+                      'w-full text-left px-4 py-3 text-lg font-semibold tracking-wide transition font-mono border-0 rounded-lg',
                       item.active
                         ? 'text-red-600 dark:text-red-400 bg-gray-100 dark:bg-neutral-800 shadow'
                         : 'text-gray-900 dark:text-gray-100 hover:text-red-700 dark:hover:text-red-300 hover:bg-gray-50 dark:hover:bg-neutral-800'
@@ -158,88 +157,22 @@ export default function DrawerTagsDesktop({ tags, selectedTags = [], setSelected
                     {item.text}
                   </a>
                 ))}
-                {/* Separador visual elegante */}
-                {Array.isArray(tags) && tags.length > 0 && (
-                  <div className="flex items-center justify-center my-4">
-                    <div className="flex-1 h-px bg-gray-200 dark:bg-neutral-700" />
-                    <div className="flex-1 h-px bg-gray-200 dark:bg-neutral-700" />
-                  </div>
-                )}
-                {/* Compartilhar o portfólio das tags marcadas com um cliente */}
-                {selectedTags.length > 0 && (
-                  <>
-                    <ShareTagButton tags={selectedTags} />
-                    <button
-                      type="button"
-                      onClick={() => setSelectedTags?.([])}
-                      className="w-full px-4 py-2 font-mono text-sm text-gray-500 dark:text-gray-400 bg-transparent border-0 shadow-none hover:underline"
-                    >
-                      Limpar filtro
-                    </button>
-                  </>
-                )}
-                {/* Tags */}
-                {Array.isArray(tags) && tags.length > 0 && (
-                  <div className="flex flex-col gap-2">
-                    {tags.map(tag => (
-                      <button
-                        key={tag}
-                        onClick={() => handleTagSelection(tag)}
-                        className={clsx(
-                          // mesma força visual do menu e do drawer mobile: fonte em negrito
-                          'w-full text-left px-4 py-3 text-lg transition font-mono border-0 rounded-lg',
-                          selectedTags.includes(tag)
-                            ? 'text-red-600 dark:text-red-400 bg-gray-100 dark:bg-neutral-800 shadow'
-                            : 'text-gray-900 dark:text-gray-100 hover:text-red-700 dark:hover:text-red-300 hover:bg-gray-50 dark:hover:bg-neutral-800'
-                        )}
-                        style={{ outline: 'none', boxShadow: 'none', border: 'none' }}
-                        aria-pressed={selectedTags.includes(tag)}
-                        aria-label={`Filtrar por tag ${tag}`}
-                        title={`Filtrar por tag ${tag}`}
-                      >
-                        {tag}
-                      </button>
-                    ))}
-                  </div>
+                {/* Filtro por tags */}
+                {Array.isArray(tags) && (
+                  <TagFilterList
+                    tags={tags}
+                    tagCounts={tagCounts}
+                    selectedTags={selectedTags}
+                    onToggle={handleTagSelection}
+                    onClear={() => setSelectedTags?.([])}
+                  />
                 )}
               </div>
             </div>
             {/* Seletor de tema */}
             {mounted && (
               <div className="w-full px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-2 bg-white dark:bg-neutral-900 border-t border-gray-100 dark:border-neutral-800 sticky bottom-0 z-10">
-                <div className="flex gap-1.5">
-                
-                  <button
-                    onClick={() => setTheme('light')}
-                    className={clsx(
-                      'flex-1 px-2 py-2 text-center font-medium rounded-lg transition border-none shadow focus:outline-none flex items-center justify-center gap-1.5',
-                      theme === 'light'
-                        ? 'bg-gray-100 dark:bg-neutral-800 text-red-600 dark:text-red-400'
-                        : 'bg-gray-50 dark:bg-neutral-800/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700'
-                    )}
-                    style={{ outline: 'none', boxShadow: 'none', border: 'none' }}
-                    aria-label="Tema claro"
-                    title="Tema claro"
-                  >
-                    <BiSun size={14} />
-                    <span className="text-xs font-mono">Claro</span>
-                  </button>
-                  <button
-                    onClick={() => setTheme('dark')}
-                    className={clsx(
-                      'flex-1 px-2 py-2 text-center font-medium rounded-lg transition border-none shadow focus:outline-none flex items-center justify-center gap-1.5',
-                      theme === 'dark'
-                        ? 'bg-gray-100 dark:bg-neutral-800 text-red-600 dark:text-red-400'
-                        : 'bg-gray-50 dark:bg-neutral-800/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700'
-                    )}
-                    style={{ outline: 'none', boxShadow: 'none', border: 'none' }}
-                    aria-label="Tema escuro"
-                    title="Tema escuro"
-                  >
-                    <BiMoon size={14} />
-                    <span className="text-xs font-mono">Escuro</span>
-                  </button>
-                </div>
+                <ThemeToggle />
               </div>
             )}
           </aside>
