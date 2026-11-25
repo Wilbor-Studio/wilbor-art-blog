@@ -85,6 +85,29 @@ function enhanceMediaWithMetadata(media: Media[]): Media[] {
     });
 }
 
+// A grade mostra no máximo 4 fileiras por página. Colunas iguais às do grid
+// abaixo: 2 no celular, 3 a partir do md (768px), 4 a partir do lg (1024px).
+const ROWS_PER_PAGE = 4;
+
+function columnsForWidth() {
+    if (typeof window === 'undefined') return 4;
+    if (window.matchMedia('(min-width: 1024px)').matches) return 4;
+    if (window.matchMedia('(min-width: 768px)').matches) return 3;
+    return 2;
+}
+
+function useGridColumns() {
+    // Começa em 4 (igual ao servidor) e corrige no cliente.
+    const [columns, setColumns] = useState(4);
+    useEffect(() => {
+        const update = () => setColumns(columnsForWidth());
+        update();
+        window.addEventListener('resize', update);
+        return () => window.removeEventListener('resize', update);
+    }, []);
+    return columns;
+}
+
 /** Altura real do header fixo (cresce com as faixas da página). */
 function headerOffset() {
     const header = document.querySelector('header');
@@ -661,6 +684,13 @@ const MediaItem = ({
 };
 
 
+const PAGE_BUTTON = clsx(
+    'min-h-[44px] rounded-md border px-5 py-2.5 touch-manipulation',
+    'bg-transparent shadow-none transition-colors',
+    'border-neutral-400 text-neutral-700 hover:border-neutral-900 hover:text-neutral-950',
+    'dark:border-neutral-600 dark:text-neutral-200 dark:hover:border-white dark:hover:text-white',
+);
+
 export default function PhotoGridContainer({
     sidebar,
     media = [],
@@ -675,6 +705,12 @@ export default function PhotoGridContainer({
     const { isAdmin } = useHiveAuth();
     const [expandedPermlinks, setExpandedPermlinks] = useState<string[]>([]);
     const [hasLargeContentMap, setHasLargeContentMap] = useState<Record<string, boolean>>({});
+    // Paginação: guarda o índice de um projeto da página atual, não o número
+    // da página. Assim, quando o número de colunas muda (girar o iPad), a
+    // página continua sendo a que contém esse projeto.
+    const [pageAnchor, setPageAnchor] = useState(0);
+    const pageSize = ROWS_PER_PAGE * useGridColumns();
+    const gridTopRef = useRef<HTMLDivElement | null>(null);
     const groupedMedia = groupMediaByPermlink(media);
     const allTags = Array.from(new Set(media.flatMap(item => item.tags || [])));
     const mediaGroups = Array.from(groupedMedia.entries())
@@ -694,6 +730,10 @@ export default function PhotoGridContainer({
             mainItem: group[0]
         }));
 
+    const pageCount = Math.max(1, Math.ceil(mediaGroups.length / pageSize));
+    const page = Math.min(Math.floor(pageAnchor / pageSize), pageCount - 1);
+    const pageGroups = mediaGroups.slice(page * pageSize, (page + 1) * pageSize);
+
     // Detectar projeto na URL ao carregar a página (apenas uma vez)
     const hasInitializedFromUrl = useRef(false);
     useEffect(() => {
@@ -708,7 +748,8 @@ export default function PhotoGridContainer({
             if (permlinks.has(projectParam)) {
                 // Marcar como inicializado para evitar loops
                 hasInitializedFromUrl.current = true;
-                // Expandir o card correspondente
+                // Ir para a página do projeto e expandir o card correspondente
+                setPageAnchor(mediaGroups.findIndex(({ permlink }) => permlink === projectParam));
                 setExpandedPermlinks([projectParam]);
                 // Scroll para o card após um pequeno delay para garantir que o DOM foi atualizado
                 setTimeout(() => {
@@ -723,6 +764,34 @@ export default function PhotoGridContainer({
             }
         }
     }, [mediaGroups.length]); // Executa apenas quando os mediaGroups forem carregados
+    // Filtro mudou (card, menu ou link): volta para a primeira página, ou
+    // para a página do projeto aberto, se ele continua na lista.
+    const tagsKey = selectedTags.join(',');
+    useEffect(() => {
+        const open = expandedPermlinks.length === 1
+            ? mediaGroups.findIndex(({ permlink }) => permlink === expandedPermlinks[0])
+            : -1;
+        setPageAnchor(Math.max(open, 0));
+        // Só a troca de filtro reposiciona; abrir um card não.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tagsKey]);
+
+    const goToPage = useCallback((next: number) => {
+        setPageAnchor(next * pageSize);
+        // O card aberto é de outra página: fecha e tira da URL.
+        setExpandedPermlinks([]);
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('project')) {
+            url.searchParams.delete('project');
+            window.history.replaceState({}, '', url);
+        }
+        const top = gridTopRef.current;
+        if (top) {
+            const y = top.getBoundingClientRect().top + window.pageYOffset - (headerOffset() + 20);
+            window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+    }, [pageSize]);
+
     // Tag tocada num card: filtra só por ela (se já era o único filtro,
     // desmarca). Para somar tags, o menu.
     const handleTagClick = useCallback((tag: string) => {
@@ -827,7 +896,7 @@ export default function PhotoGridContainer({
                     </div>
                 )}
 
-                <div className={clsx(
+                <div ref={gridTopRef} className={clsx(
                     'grid',
                     'gap-y-8 sm:gap-y-6 gap-x-2 sm:gap-x-4 md:gap-5',
                     'grid-cols-2 sm:grid-cols-2 md:grid-cols-3',
@@ -837,7 +906,7 @@ export default function PhotoGridContainer({
                     expandedPermlinks.length > 0 ? 'auto-rows-auto' : 'auto-rows-fr',
                     'bg-white dark:bg-neutral-950'
                 )}>
-                    {mediaGroups.map(({ permlink, group }, idx) => {
+                    {pageGroups.map(({ permlink, group }, idx) => {
                         const isExpanded = expandedPermlinks.includes(permlink);
                         const isOdd = idx % 2 === 1;
                         return (
@@ -883,6 +952,35 @@ export default function PhotoGridContainer({
                         );
                     })}
                 </div>
+
+                {pageCount > 1 && (
+                    <nav
+                        aria-label="Páginas de projetos"
+                        className="mt-10 mb-4 flex items-center justify-center gap-4 font-mono text-xs uppercase tracking-wider"
+                    >
+                        {page > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => goToPage(page - 1)}
+                                className={PAGE_BUTTON}
+                            >
+                                página anterior
+                            </button>
+                        )}
+                        <span className="text-neutral-500 dark:text-neutral-400">
+                            {page + 1} / {pageCount}
+                        </span>
+                        {page < pageCount - 1 && (
+                            <button
+                                type="button"
+                                onClick={() => goToPage(page + 1)}
+                                className={PAGE_BUTTON}
+                            >
+                                próxima página
+                            </button>
+                        )}
+                    </nav>
+                )}
             </div>
             {sidebar && (
                 <div className="hidden md:block">
