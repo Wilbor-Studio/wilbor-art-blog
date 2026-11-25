@@ -129,7 +129,9 @@ export default function ImageLightbox({ images, startIndex = 0, onClose }: Image
         className="fixed right-4 top-4 z-[10000] flex items-center justify-center rounded-full p-1 focus:outline-none sm:right-6 sm:top-6 sm:p-2"
         style={{ background: 'transparent', border: 'none', boxShadow: 'none' }}
       >
-        <IconX size={35} />
+        {/* Na tela cheia o X é sempre preto: no tema claro ele seria branco
+            (o padrão do IconX), e o artista quer o mesmo X do tema escuro. */}
+        <IconX size={35} lineColor="black" />
       </button>
 
       <ImageCarousel
