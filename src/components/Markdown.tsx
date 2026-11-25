@@ -252,7 +252,14 @@ export default function Markdown({ children, className = '', removeMedia = false
             return (
                 <p
                     {...rest}
-                    className={mergeClassName(paragraphClassName, isExhibitionDateNode(node) && 'exhibition-date')}
+                    className={mergeClassName(
+                        paragraphClassName,
+                        // No card aberto, uma linha em branco do post separa
+                        // os parágrafos como no site antigo; sem margem, eles
+                        // grudavam num bloco só.
+                        inExpandedCard && 'mb-[1.25em] last:mb-0',
+                        isExhibitionDateNode(node) && 'exhibition-date',
+                    )}
                     style={{ color: textColor }}
                 />
             );
