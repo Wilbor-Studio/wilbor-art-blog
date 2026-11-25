@@ -1,4 +1,5 @@
 import { Client, Discussion, PrivateKey } from '@hiveio/dhive';
+import { getAllPostsByBlog } from '@/../lib/hive/hive-client';
 
 const client = new Client(['https://api.hive.blog']);
 
@@ -96,11 +97,10 @@ export async function getPostsByAuthor(author: string, permlink?: string): Promi
       return [post as Discussion];
     }
 
-    const posts = await client.database.getDiscussions('blog', {
-      tag: author,
-      limit: 20
-    });
-    return posts as Discussion[];
+    // Todos os posts da conta, paginados. Antes vinham só os 20 mais
+    // recentes: cada projeto migrado do Cargo empurrava um antigo para fora
+    // da grade.
+    return (await getAllPostsByBlog(author)) as Discussion[];
   } catch (error) {
     return [];
   }
