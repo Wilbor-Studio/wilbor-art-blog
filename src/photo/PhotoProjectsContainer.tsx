@@ -89,6 +89,14 @@ function enhanceMediaWithMetadata(media: Media[]): Media[] {
 // abaixo: 2 no celular, 3 a partir do md (768px), 4 a partir do lg (1024px).
 const ROWS_PER_PAGE = 4;
 
+// Onda de cor dos cards no toque: começo depois que a grade aparece, tempo
+// entre uma fileira e a de baixo, quanto cada uma fica acesa e a cada
+// quanto a onda se repete.
+const WAVE_START_MS = 800;
+const WAVE_ROW_STEP_MS = 450;
+const WAVE_HOLD_MS = 1100;
+const WAVE_PERIOD_MS = 9000;
+
 function columnsForWidth() {
     if (typeof window === 'undefined') return 4;
     if (window.matchMedia('(min-width: 1024px)').matches) return 4;
@@ -709,8 +717,36 @@ export default function PhotoGridContainer({
     // da página. Assim, quando o número de colunas muda (girar o iPad), a
     // página continua sendo a que contém esse projeto.
     const [pageAnchor, setPageAnchor] = useState(0);
-    const pageSize = ROWS_PER_PAGE * useGridColumns();
+    const columns = useGridColumns();
+    const pageSize = ROWS_PER_PAGE * columns;
     const gridTopRef = useRef<HTMLDivElement | null>(null);
+    // Onda de cor (card-wave em tailwind.css), só em telas de toque (iPad e
+    // iPhone, onde não existe hover; no computador o hover já faz isso): com
+    // todos os cards fechados e a grade na tela, uma fileira inteira por
+    // vez, de cima para baixo, ganha cor e cresce um pouco. Um relógio só
+    // acende a fileira toda junto (por CSS, cada card tinha o próprio tempo
+    // e eles saíam fora de compasso). Recomeça do início quando a grade
+    // volta para a tela.
+    const [gridInView, setGridInView] = useState(false);
+    const [touchScreen, setTouchScreen] = useState(false);
+    const [litRows, setLitRows] = useState<number[]>([]);
+    useEffect(() => {
+        const grid = gridTopRef.current;
+        if (!grid || typeof IntersectionObserver === 'undefined') return;
+        const observer = new IntersectionObserver(
+            ([entry]) => setGridInView(entry.isIntersecting),
+            { threshold: 0.15 },
+        );
+        observer.observe(grid);
+        return () => observer.disconnect();
+    }, []);
+    useEffect(() => {
+        const query = window.matchMedia('(hover: none)');
+        const update = () => setTouchScreen(query.matches);
+        update();
+        query.addEventListener('change', update);
+        return () => query.removeEventListener('change', update);
+    }, []);
     const groupedMedia = groupMediaByPermlink(media);
     const allTags = Array.from(new Set(media.flatMap(item => item.tags || [])));
     const mediaGroups = Array.from(groupedMedia.entries())
@@ -733,6 +769,34 @@ export default function PhotoGridContainer({
     const pageCount = Math.max(1, Math.ceil(mediaGroups.length / pageSize));
     const page = Math.min(Math.floor(pageAnchor / pageSize), pageCount - 1);
     const pageGroups = mediaGroups.slice(page * pageSize, (page + 1) * pageSize);
+    const waving = touchScreen && gridInView && expandedPermlinks.length === 0;
+    const rowCount = Math.ceil(pageGroups.length / columns);
+    useEffect(() => {
+        setLitRows([]);
+        if (!waving || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        let timers: ReturnType<typeof setTimeout>[] = [];
+        const runWave = () => {
+            timers = [];
+            for (let row = 0; row < rowCount; row++) {
+                timers.push(setTimeout(() => setLitRows(rows => [...rows, row]), row * WAVE_ROW_STEP_MS));
+                timers.push(setTimeout(
+                    () => setLitRows(rows => rows.filter(r => r !== row)),
+                    row * WAVE_ROW_STEP_MS + WAVE_HOLD_MS,
+                ));
+            }
+        };
+        let interval: ReturnType<typeof setInterval> | undefined;
+        const start = setTimeout(() => {
+            runWave();
+            interval = setInterval(runWave, WAVE_PERIOD_MS);
+        }, WAVE_START_MS);
+        return () => {
+            clearTimeout(start);
+            if (interval) clearInterval(interval);
+            timers.forEach(clearTimeout);
+            setLitRows([]);
+        };
+    }, [waving, rowCount, page]);
 
     // Detectar projeto na URL ao carregar a página (apenas uma vez)
     const hasInitializedFromUrl = useRef(false);
@@ -913,8 +977,15 @@ export default function PhotoGridContainer({
 	                            <div
 	                                key={permlink}
 	                                ref={el => { cardRefs.current[permlink] = el; }}
+                                style={{
+                                    outline: 'none',
+                                    border: 'none',
+                                    boxShadow: 'none',
+                                }}
 		                                className={clsx(
 	                            'relative overflow-hidden w-full',
+                                    waving && 'card-wave',
+                                    waving && litRows.includes(Math.floor(idx / columns)) && 'card-wave-on',
 	                            'transition-all duration-300',
 	                            'rounded-lg',
 	                            'bg-transparent',
@@ -929,7 +1000,6 @@ export default function PhotoGridContainer({
                                         )
                                         : 'w-full',
 	                                )}
-                                        style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
 		                                aria-label={`Projeto ${group[0]?.title || ''}`}
 		                            >
                                 <MediaItem

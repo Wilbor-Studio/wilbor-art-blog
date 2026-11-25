@@ -494,6 +494,30 @@
   }
 }
 
+/* Onda de cor dos cards de projeto no toque (PhotoProjectsContainer):
+   a fileira acesa (card-wave-on, uma fileira inteira de cada vez) sai do
+   cinza para a cor e cresce um pouco; ao apagar, volta. O JS decide a
+   vez de cada fileira; aqui ficam só a aparência e a transição. */
+.card-wave {
+  transition-property: scale, filter;
+  transition-duration: 600ms;
+  transition-timing-function: ease-in-out;
+}
+
+.card-wave :is(img, video) {
+  transition-property: filter;
+  transition-duration: 600ms;
+  transition-timing-function: ease-in-out;
+}
+
+.card-wave-on {
+  scale: 1.04;
+}
+
+.card-wave-on :is(img, video) {
+  filter: grayscale(0);
+}
+
 /* Troca de tema (ThemeToggle): esmaecimento da página toda entre o tema
    antigo e o novo, mais lento que o padrão do navegador (250ms). */
 ::view-transition-old(root),
