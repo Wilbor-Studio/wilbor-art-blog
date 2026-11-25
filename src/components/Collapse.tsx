@@ -70,13 +70,16 @@ export default function Collapse({
     <div
       id={id}
       className={[
-        'grid ease-in-out motion-reduce:transition-none',
+        // Coluna travada na largura disponível: sem isso, a coluna do grid
+        // crescia até a largura mínima do conteúdo (um link longo, por
+        // exemplo) e tudo dentro vazava da tela no celular.
+        'grid grid-cols-[minmax(0,1fr)] ease-in-out motion-reduce:transition-none',
         'transition-[grid-template-rows,opacity,visibility]',
         expanded ? 'grid-rows-[1fr] opacity-100 visible' : 'grid-rows-[0fr] opacity-0 invisible',
       ].join(' ')}
       style={{ transitionDuration: `${DURATION}ms` }}
     >
-      <div className={`min-h-0 ${settled ? 'overflow-visible' : 'overflow-hidden'}`}>
+      <div className={`min-h-0 min-w-0 ${settled ? 'overflow-visible' : 'overflow-hidden'}`}>
         <div className={className}>{children}</div>
       </div>
     </div>
