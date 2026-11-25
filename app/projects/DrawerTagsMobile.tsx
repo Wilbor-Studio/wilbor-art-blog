@@ -2,16 +2,17 @@
 import IconMenu from '@/app/IconMenu';
 import { IconX } from '@/components/IconX';
 import ShareTagButton from '@/components/ShareTagButton';
+import { buildTagsUrl, toggleTag } from '@/utility/tag-filter';
 import { clsx } from 'clsx/lite';
-import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { BiDesktop, BiMoon, BiSun } from 'react-icons/bi';
 
-export default function DrawerTagsMobile({ tags, selectedTag, setSelectedTag, menuItems, onMenuItemClick }: {
+export default function DrawerTagsMobile({ tags, selectedTags = [], setSelectedTags, menuItems, onMenuItemClick }: {
     tags: string[];
-    selectedTag?: string | null;
-    setSelectedTag?: (tag: string | null) => void;
+    selectedTags?: string[];
+    /** Sem ele (outras rotas), tocar numa tag leva para /projects filtrado. */
+    setSelectedTags?: (tags: string[]) => void;
     menuItems: { text: string; mobileText: string; href: string; active: boolean }[];
     onMenuItemClick?: (href: string) => void;
 }) {
@@ -19,28 +20,12 @@ export default function DrawerTagsMobile({ tags, selectedTag, setSelectedTag, me
     const [drawerVisible, setDrawerVisible] = useState(false);
     const [drawerActive, setDrawerActive] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
-    const searchParams = useSearchParams();
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
         setMounted(true);
     }, []);
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-        const tagFromUrl = new URL(window.location.href).searchParams.get('tag');
-        if (tagFromUrl && tags.includes(tagFromUrl)) {
-            if (typeof setSelectedTag === 'function' && tagFromUrl !== selectedTag) {
-                setSelectedTag(tagFromUrl);
-            }
-        } else if (!tagFromUrl && selectedTag) {
-            // Se não há tag na URL, limpa o estado
-            if (typeof setSelectedTag === 'function') {
-                setSelectedTag(null);
-            }
-        }
-    }, [searchParams, tags, setSelectedTag, selectedTag]);
 
     useEffect(() => {
         if (showMobileTags) {
@@ -72,42 +57,19 @@ export default function DrawerTagsMobile({ tags, selectedTag, setSelectedTag, me
         };
     }, [showMobileTags, drawerVisible]);
 
-    const handleTagSelection = (tag: string | null) => {
-        // Previne qualquer comportamento padrão
+    // Várias tags podem ficar marcadas (o filtro mostra projetos com qualquer
+    // uma delas). No celular a gaveta cobre a tela, então ela fecha ao
+    // marcar, para a pessoa ver o resultado; para somar outra tag, reabre.
+    const handleTagSelection = (tag: string) => {
         if (isAnimating) return;
-        
-        if (typeof setSelectedTag === 'function') {
-            // Atualiza a URL primeiro
-            if (tag) {
-                const currentUrl = new URL(window.location.href);
-                currentUrl.searchParams.set('tag', tag);
-                window.history.pushState({}, '', currentUrl.toString());
-            } else {
-                const url = new URL(window.location.href);
-                url.searchParams.delete('tag');
-                window.history.pushState({}, '', url.toString());
-            }
-            
-            // Depois atualiza o estado
-            setSelectedTag(tag);
-        } else {
-            if (tag) {
-                window.location.href = `/projects?tag=${encodeURIComponent(tag)}`;
-            } else {
-                window.location.href = '/projects';
-            }
-        }
-
-        if (typeof window !== 'undefined') {
+        if (typeof setSelectedTags === 'function') {
+            setSelectedTags(toggleTag(selectedTags, tag));
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            window.location.href = buildTagsUrl([tag]);
         }
-        
-        // Fecha o drawer após um pequeno delay para garantir que o clique foi processado
-        setTimeout(() => {
-            setShowMobileTags(false);
-        }, 100);
+        setTimeout(() => setShowMobileTags(false), 100);
     };
-
 
     return (
         <div className="flex items-center -mr-4 bg-transparent">
@@ -218,9 +180,21 @@ export default function DrawerTagsMobile({ tags, selectedTag, setSelectedTag, me
                                         <div className="flex-1 h-px bg-gray-200 dark:bg-neutral-700" />
                                     </div>
                                 )}
-                                {/* Compartilhar portfólio da tag selecionada com um cliente */}
-                                {selectedTag && (
-                                    <ShareTagButton tag={selectedTag} />
+                                {/* Compartilhar o portfólio das tags marcadas com um cliente */}
+                                {selectedTags.length > 0 && (
+                                    <>
+                                        <ShareTagButton tags={selectedTags} />
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setSelectedTags?.([]);
+                                                setTimeout(() => setShowMobileTags(false), 100);
+                                            }}
+                                            className="w-full px-4 py-2 font-mono text-sm text-gray-500 dark:text-gray-400 bg-transparent border-0 shadow-none hover:underline"
+                                        >
+                                            Limpar filtro
+                                        </button>
+                                    </>
                                 )}
                                 {/* Tags */}
                                 {Array.isArray(tags) && tags.length > 0 && (
@@ -232,7 +206,7 @@ export default function DrawerTagsMobile({ tags, selectedTag, setSelectedTag, me
                                                 className={clsx(
                                                     // mesma "força" visual do menu: fonte em negrito (sem forçar maiúsculas)
                                                     'w-full text-left px-4 py-3 text-lg transition-colors font-mono border-0 rounded-lg',
-                                                    selectedTag === tag
+                                                    selectedTags.includes(tag)
                                                         ? 'text-red-600 dark:text-red-400 bg-gray-100 dark:bg-neutral-800 shadow'
                                                         : 'text-gray-900 dark:text-gray-100 hover:text-red-700 dark:hover:text-red-300 hover:bg-gray-50 dark:hover:bg-neutral-800'
                                                 )}
@@ -241,6 +215,7 @@ export default function DrawerTagsMobile({ tags, selectedTag, setSelectedTag, me
                                                     boxShadow: 'none', 
                                                     border: 'none'
                                                 }}
+                                                aria-pressed={selectedTags.includes(tag)}
                                                 aria-label={`Filtrar por tag ${tag}`}
                                                 title={`Filtrar por tag ${tag}`}
                                             >

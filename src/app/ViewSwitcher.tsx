@@ -26,8 +26,8 @@ export default function ViewSwitcher({
   isLandingPage?: boolean
   drawerTagsProps?: {
     tags: string[];
-    selectedTag: string | null;
-    setSelectedTag?: (tag: string | null) => void;
+    selectedTags: string[];
+    setSelectedTags?: (tags: string[]) => void;
   }
   onMenuItemClick?: (href: string) => void;
   /** Grade de projetos aberta? Com onToggleProjects, a faixa do header abre e fecha a grade. */
@@ -131,8 +131,8 @@ export default function ViewSwitcher({
 
   const drawerProps = {
     tags: tagsToUse,
-    selectedTag: drawerTagsProps?.selectedTag ?? null,
-    setSelectedTag: drawerTagsProps?.setSelectedTag,
+    selectedTags: drawerTagsProps?.selectedTags ?? [],
+    setSelectedTags: drawerTagsProps?.setSelectedTags,
     menuItems,
     onMenuItemClick,
   };

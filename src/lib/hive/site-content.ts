@@ -142,6 +142,60 @@ export async function fetchPostBody(permlink: string): Promise<string | null> {
   }
 }
 
+/**
+ * Título, resumo e imagem de um projeto, para a prévia do link
+ * compartilhado (WhatsApp, e-mail, redes). Null se o post não existir ou o
+ * Hive não responder a tempo: aí a página usa a prévia padrão do site.
+ */
+export async function fetchPostPreview(permlink: string): Promise<{
+  title: string
+  description: string
+  image?: string
+} | null> {
+  if (!SITE_AUTHOR || !permlink) return null;
+
+  try {
+    const response = await fetch('https://api.hive.blog', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'condenser_api.get_content',
+        params: [SITE_AUTHOR, permlink],
+        id: 1,
+      }),
+      signal: AbortSignal.timeout(5000),
+      next: { revalidate: 300 },
+    });
+    if (!response.ok) return null;
+
+    const post = (await response.json())?.result;
+    if (!post?.title) return null;
+
+    let metadata: { thumbnail?: string, image?: string[] } = {};
+    try { metadata = JSON.parse(post.json_metadata || '{}'); } catch { /* sem metadados */ }
+
+    // Texto corrido do corpo, sem markdown nem HTML, para o resumo.
+    const description = String(post.body || '')
+      .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+      .replace(/https?:\/\/\S+/g, ' ')
+      .replace(/[#*_>`~|-]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 180);
+
+    return {
+      title: post.title,
+      description,
+      image: metadata.thumbnail || metadata.image?.[0],
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchSiteConfig(): Promise<SiteConfig> {
   return parseSiteConfig(await fetchPostBody(PERMLINK_SITE_CONFIG));
 }

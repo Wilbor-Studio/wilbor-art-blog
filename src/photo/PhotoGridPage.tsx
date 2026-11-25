@@ -8,13 +8,13 @@ const PATH_GRID_INFERRED = 'projects';
 export default function PhotoGridPage({
   photos,
   photosCount,
-  selectedTag,
-  setSelectedTag
+  selectedTags,
+  setSelectedTags
 }: {
   photos: Photo[]
   photosCount: number
-  selectedTag: string | null
-  setSelectedTag: (tag: string | null) => void
+  selectedTags: string[]
+  setSelectedTags: (tags: string[]) => void
 }) {
   return (
     <PhotoGridContainer
@@ -27,8 +27,8 @@ export default function PhotoGridPage({
       }))}
       sidebar={undefined}
       canSelect
-      selectedTag={selectedTag}
-      setSelectedTag={setSelectedTag}
+      selectedTags={selectedTags}
+      setSelectedTags={setSelectedTags}
     />
   );
 }

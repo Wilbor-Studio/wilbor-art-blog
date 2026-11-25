@@ -2,61 +2,35 @@
 import { clsx } from 'clsx/lite';
 import { useState } from 'react';
 import { BiCheck, BiShareAlt } from 'react-icons/bi';
+import { buildTagsUrl, shareLink } from '@/utility/tag-filter';
 
 /**
- * Botão para o artista compartilhar um portfólio filtrado por tag com um cliente.
- * Monta a URL pública (/projects?tag=...), tenta o compartilhamento nativo do
- * sistema (WhatsApp, e-mail, etc. no celular) e cai para copiar o link no desktop.
+ * Botão para o artista compartilhar o portfólio filtrado pelas tags marcadas
+ * com um cliente. Monta a URL pública (/projects?tag=a&tag=b), tenta o
+ * compartilhamento nativo do sistema (WhatsApp, e-mail, etc. no celular) e
+ * cai para copiar o link no desktop.
  */
 export default function ShareTagButton({
-  tag,
+  tags,
   className,
   compact = false,
 }: {
-  tag: string;
+  tags: string[];
   className?: string;
   /** Variante inline/compacta (ao lado da barra de filtro) em vez de bloco (drawer) */
   compact?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
-
-  const buildUrl = () => {
-    if (typeof window === 'undefined') return '';
-    const url = new URL(`${window.location.origin}/projects`);
-    url.searchParams.set('tag', tag);
-    return url.toString();
-  };
+  const label = tags.join(', ');
 
   const handleShare = async () => {
-    const url = buildUrl();
-    if (!url) return;
-
-    const shareData = {
+    const result = await shareLink(buildTagsUrl(tags), {
       title: 'Portfólio Wilbor',
-      text: `Confira este portfólio (${tag}):`,
-      url,
-    };
-
-    // Compartilhamento nativo (principalmente em celulares)
-    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
-      try {
-        await navigator.share(shareData);
-        return;
-      } catch (err) {
-        // Usuário cancelou o menu nativo: não faz fallback
-        if ((err as Error)?.name === 'AbortError') return;
-        // Qualquer outro erro: cai para copiar o link
-      }
-    }
-
-    // Fallback desktop: copia o link para a área de transferência
-    try {
-      await navigator.clipboard.writeText(url);
+      text: `Confira este portfólio (${label}):`,
+    });
+    if (result === 'copied') {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Último recurso, caso clipboard não esteja disponível
-      window.prompt('Copie o link do portfólio:', url);
     }
   };
 
@@ -73,8 +47,8 @@ export default function ShareTagButton({
         className
       )}
       style={{ outline: 'none', boxShadow: 'none' }}
-      aria-label={`Compartilhar portfólio da tag ${tag}`}
-      title={`Compartilhar portfólio da tag ${tag}`}
+      aria-label={`Compartilhar portfólio de ${label}`}
+      title={`Compartilhar portfólio de ${label}`}
     >
       {copied ? <BiCheck size={compact ? 16 : 18} /> : <BiShareAlt size={compact ? 16 : 18} />}
       <span>{copied ? 'Link copiado!' : compact ? 'Compartilhar' : 'Enviar portfólio'}</span>

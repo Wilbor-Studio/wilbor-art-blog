@@ -5,6 +5,7 @@ import About from '@/app/about/page';
 import { PATH_GRID } from '@/app/paths';
 import Collapse from '@/components/Collapse';
 import useFillViewportBands from '@/components/useFillViewportBands';
+import { readTagsFromParams, writeTagsToUrl } from '@/utility/tag-filter';
 import ExhibitionsContent from '@/components/ExhibitionsContent';
 import PartnersContent from '@/components/PartnersContent';
 import SoundContent from '@/components/SoundContent';
@@ -20,7 +21,8 @@ const MemoizedPartnersContent = memo(PartnersContent);
 
 export default function ProjectsOnePageClient({ projectsProps }: { projectsProps: any }) {
   const [activeSection, setActiveSection] = useState<SwitcherSelection>('projects');
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  // Tags marcadas no filtro (várias; ver utility/tag-filter).
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   // A grade começa aberta (é a vitrine do site) e pode ser recolhida pelo
   // toque na faixa do header. Abre sozinha quando a pessoa escolhe uma tag,
   // chega por link de projeto ou toca em "PROJETOS" no menu.
@@ -58,27 +60,18 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
 
   // Sync tag with URL on mount and update
   useEffect(() => {
-    const tagFromUrl = searchParams.get('tag');
-    if (tagFromUrl) {
-      setSelectedTag(tagFromUrl);
-    } else {
-      setSelectedTag(null);
-    }
-    if (tagFromUrl || searchParams.get('project')) setProjectsOpen(true);
+    const tagsFromUrl = readTagsFromParams(searchParams);
+    setSelectedTags(tagsFromUrl);
+    if (tagsFromUrl.length > 0 || searchParams.get('project')) setProjectsOpen(true);
   }, [searchParams]);
 
-  const handleTagChange = useCallback((tag: string | null) => {
+  const handleTagsChange = useCallback((tags: string[]) => {
     const url = new URL(window.location.href);
-    if (tag) {
-      url.searchParams.set('tag', tag);
-    } else {
-      url.searchParams.delete('tag');
-    }
-    // Preservar o parâmetro project se existir
-    // (não remover, apenas atualizar a tag)
+    // O parâmetro project, se houver, fica: só as tags mudam.
+    writeTagsToUrl(url, tags);
     window.history.pushState({}, '', url.toString());
-    setSelectedTag(tag);
-    if (tag) setProjectsOpen(true);
+    setSelectedTags(tags);
+    if (tags.length > 0) setProjectsOpen(true);
   }, []);
 
   // Handler para navegação por hash (scroll suave até a seção)
@@ -103,7 +96,7 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
         cleanUrl.hash = '';
         window.history.replaceState(null, '', PATH_GRID + cleanUrl.search);
 
-        setSelectedTag(null);
+        setSelectedTags([]);
         setActiveSection('projects');
         setProjectsOpen(true);
         window.dispatchEvent(new CustomEvent('wilbor:close-expanded-project'));
@@ -133,7 +126,7 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
       // Fallback: se não encontrar a seção, recarrega a página
       window.location.href = href;
     }
-  }, [router, setSelectedTag]);
+  }, [router]);
 
   // Atualiza rota /projects#secao conforme o usuário rola (scroll spy baseado na seção mais próxima do centro)
   useEffect(() => {
@@ -216,8 +209,8 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
         isLandingPage={true}
         drawerTagsProps={{
           tags: projectsProps.tags.map((t: any) => t.tag),
-          selectedTag,
-          setSelectedTag: handleTagChange,
+          selectedTags,
+          setSelectedTags: handleTagsChange,
         }}
         onMenuItemClick={handleMenuItemClick}
         projectsOpen={projectsOpen}
@@ -236,8 +229,8 @@ export default function ProjectsOnePageClient({ projectsProps }: { projectsProps
             <MemoizedProjectsClient
               {...projectsProps}
               hideSwitcher={true}
-              externalSelectedTag={selectedTag}
-              onTagChange={handleTagChange}
+              externalSelectedTags={selectedTags}
+              onTagsChange={handleTagsChange}
             />
           </Collapse>
         </section>

@@ -16,14 +16,14 @@ export default function PhotoGridPageClient({
   cameras: any[];
   simulations: any[];
 }) {
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   return (
     <PhotoGridPage
       photos={photos}
       photosCount={photosCount}
-      selectedTag={selectedTag}
-      setSelectedTag={setSelectedTag}
+      selectedTags={selectedTags}
+      setSelectedTags={setSelectedTags}
     />
   );
 }
