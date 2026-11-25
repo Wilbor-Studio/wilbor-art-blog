@@ -1,7 +1,32 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import Collapse from '@/components/Collapse';
+
+/**
+ * Seções de título da página (size="title") funcionam como acordeão: abrir
+ * uma avisa as outras, que fecham. Subseções (categorias de Parceiros,
+ * "saber mais") e a grade de projetos ficam de fora.
+ */
+const SECTION_OPEN_EVENT = 'wilbor:section-open';
+/** Duração da animação do Collapse, mais uma folga. */
+const ANCHOR_MS = 600;
+
+/**
+ * Mantém o elemento parado na tela enquanto o conteúdo acima dele recolhe:
+ * sem isso, ao fechar uma seção aberta mais acima, o título que a pessoa
+ * acabou de tocar subia e saía da tela.
+ */
+function keepInPlace(el: HTMLElement) {
+  const startTop = el.getBoundingClientRect().top;
+  const until = performance.now() + ANCHOR_MS;
+  const step = () => {
+    const drift = el.getBoundingClientRect().top - startTop;
+    if (Math.abs(drift) > 0.5) window.scrollBy(0, drift);
+    if (performance.now() < until) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
 
 /**
  * Bloco recolhível: mostra só o rótulo e expande o conteúdo quando a pessoa
@@ -58,13 +83,40 @@ export default function CollapsibleSection({
   };
   const generatedId = useId();
   const contentId = id ?? generatedId;
+  const exclusive = size === 'title';
+
+  // Outra seção de título abriu: esta fecha.
+  const isOpenRef = useRef(isOpen);
+  isOpenRef.current = isOpen;
+  const setIsOpenRef = useRef(setIsOpen);
+  setIsOpenRef.current = setIsOpen;
+  useEffect(() => {
+    if (!exclusive) return;
+    const onOtherOpen = (event: Event) => {
+      if ((event as CustomEvent<string>).detail !== contentId && isOpenRef.current) {
+        setIsOpenRef.current(false);
+      }
+    };
+    window.addEventListener(SECTION_OPEN_EVENT, onOtherOpen);
+    return () => window.removeEventListener(SECTION_OPEN_EVENT, onOtherOpen);
+  }, [exclusive, contentId]);
 
   return (
     <div>
       <div className="flex items-center gap-3">
       <button
         type="button"
-        onClick={() => setIsOpen(open => !open)}
+        onClick={event => {
+          const opening = !isOpen;
+          setIsOpen(opening);
+          if (opening && exclusive) {
+            // Toque da pessoa: o título fica parado enquanto a de cima
+            // fecha. O menu também clica aqui (isTrusted false), mas ele
+            // mesmo rola até a seção, então não segura.
+            if (event.isTrusted) keepInPlace(event.currentTarget);
+            window.dispatchEvent(new CustomEvent(SECTION_OPEN_EVENT, { detail: contentId }));
+          }
+        }}
         aria-expanded={isOpen}
         // Faixas de título dividem a sobra da tela (useFillViewportBands).
         data-band-row={size === 'title' ? '' : undefined}
